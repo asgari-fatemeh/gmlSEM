@@ -29,9 +29,9 @@ During this tutorial, we use `mlgSEM::AttitudeDataset`. It is a simulated data i
 
 ### Ellipsis
 
-In *mlgSEM*, you can use ellipsis `…` to avoid writing a sequence of variables whenever it make sense. For example in *mlgSEM* syntax, `y1,…,y5` is a short version of y1,y2,y3,y4,y5 and `y1+…+y5` is a short version of y1+y2+y3+y4+y5. Also `y1a+…+y5a` is the short version of y1a+y2b+y3a+y4a+y5a, and `y1a,…,y1e` is a short version of y1a,y1b,y1c,y1d,y1e. In the *mlgSEM* code, `…` simply replace by the missed part of the sequence. The parser is moderately smart, and you can use ellipsis to concise any sequence that of which the template is easy to infer. If helps you can add the first two terms of the sequence to let the parser infer the sequence. For example `y11,y12,…,y112` is the short version of y11,y12,y13,y14,y15,y16,y17,y18,y19,y110,y111,y112, and `y1a,y2b,…,y5e` is the short version of y1a,y2b,y3c,y4d,y5e.
+In *mlgSEM*, you can use ellipsis `…` to avoid writing a sequence of variables whenever it make sense. For example in *mlgSEM* syntax, `y1,…,y5` is a short version of y1,y2,y3,y4,y5 and `y1+…+y5` is a short version of y1+y2+y3+y4+y5. Also `y1a+…+y5a` is the short version of y1a+y2b+y3a+y4a+y5a, and `y1a,…,y1e` is a short version of y1a,y1b,y1c,y1d,y1e. In a *mlgSEM* model, `…` simply will be replaced by the missed part of the sequence. The parser is moderately smart, and you can use ellipsis to concise any sequence that of the template is easy to infer. If helps you can add the first two elements of the sequence to let the parser infer the whole sequence. For example `y11,y12,…,y112` is the short version of y11,y12,y13,y14,y15,y16,y17,y18,y19,y110,y111,y112, and `y1a,y2b,…,y5e` is the short version of y1a,y2b,y3c,y4d,y5e.
 
-To insure that the parser understood you well, you can print the digested syntax with `syntax(model)`. In the case of using ellipsis in the model syntax, you can use the same convention to name the parameters,
+To insure that the parser understood you well, you can print the digested syntax with `syntax(model)`. In the case of using ellipsis in the syntax, you can use the same convention to name the parameters,
 
 :::{#exm-ellipsis2}
 
