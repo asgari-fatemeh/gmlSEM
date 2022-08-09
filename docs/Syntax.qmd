@@ -41,7 +41,7 @@ To insure that the parser understood you well, you can print the digested syntax
 
 :::
 
-In @exm-ellipsis2 a latent variable is defined using five indicators a1,a2,a3,a4,a5 with corresponding factor loadings lambda1,lambda2,lambda3,lambda4,lambda5.
+In @exm-ellipsis2 a latent variable is defined using five indicators a1, a2, a3, a4, a5 with corresponding factor loadings lambda1, lambda2, lambda3, lambda4, lambda5.
 
 ### Alias
 
