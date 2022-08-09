@@ -92,7 +92,7 @@ div.csl-indent {
 <section id="ellipsis" class="level3">
 <h3 class="anchored" data-anchor-id="ellipsis">Ellipsis</h3>
 <p>In <em>mlgSEM</em>, you can use ellipsis <code>…</code> to avoid writing a sequence of variables whenever it make sense. For example in <em>mlgSEM</em> syntax, <code>y1,…,y5</code> is a short version of y1,y2,y3,y4,y5 and <code>y1+…+y5</code> is a short version of y1+y2+y3+y4+y5. Also <code>y1a+…+y5a</code> is the short version of y1a+y2b+y3a+y4a+y5a, and <code>y1a,…,y1e</code> is a short version of y1a,y1b,y1c,y1d,y1e. In a <em>mlgSEM</em> model, <code>…</code> simply will be replaced by the missed part of the sequence. The parser is moderately smart, and you can use ellipsis to concise any sequence that of the template is easy to infer. If helps you can add the first two elements of the sequence to let the parser infer the whole sequence. For example <code>y11,y12,…,y112</code> is the short version of y11,y12,y13,y14,y15,y16,y17,y18,y19,y110,y111,y112, and <code>y1a,y2b,…,y5e</code> is the short version of y1a,y2b,y3c,y4d,y5e.</p>
-<p>To insure that the parser understood you well, you can print the digested syntax with <code>syntax(model)</code>. In the case of using ellipsis in the syntax, you can use the same convention to name the parameters,</p>
+<p>To ensure that the parser understood you well, you can print the digested syntax with <code>syntax(model)</code>. In the case of using ellipsis in the syntax, you can use the same convention to name the parameters,</p>
 <div id="exm-ellipsis2" class="theorem example">
 <p><span class="theorem-title"><strong>Example 1 (Labeling parameters using ellipsis) </strong></span></p>
 <pre><code>model&lt;-' at  =~ lambda1*a1 + ... + lambda5*a5'</code></pre>
