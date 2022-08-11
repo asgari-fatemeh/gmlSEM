@@ -7,31 +7,31 @@ bibliography: refs.bib
 
 ## Genelaralized Multi-Level SEM in R
 
-This project aims at developing Generalized Multi-Level SEM in R. The main motivation was to develop SEM models for zero-inflated and zero-one-inflated beta responses (i.e. respones that take values on either \[0,1\], \[0,1) or (0,1\] intervals). The approach is based on maximum likelihood estimation and is in the line of the works of @muthen2002beyond and @rabe2004generalized. Since introducing other distributions and families and their zero (or *d*)-inflated versions are straightforward and a complete framework for Generalized SEM in the **#rstat** is absent, we have implemented the codes to support other distributions. In the case of the exponential family of distributions *gmlSEM* supports models which can be run in *gsem* at *stata* software. Additionally in confronting outlier data in our main motivation problem, we take advantage of Trimmed Likelihood (TL) Estimators as in @muller2003breakdown and developed an algorithm to employ TL Estimators in multi-level settings which is available in the package.
+This project aims at developing Generalized Multi-Level SEM in R. The main motivation was to develop SEM models for zero-inflated and zero-one-inflated beta responses (i.e. respones that take values on either \[0,1\], \[0,1) or (0,1\] intervals). The approach is based on maximum likelihood estimation and is in the line of the works of @muthen2002beyond and @rabe2004generalized. Since introducing other distributions and families and their zero (or *d*)-inflated versions are straightforward and a complete framework for Generalized SEM in the **#rstat** is absent, we have implemented the codes to support the other distributions. In the case of the exponential family of distributions, *gmlSEM* supports models which can be run in *gsem* at *stata* software. Additionally, in confronting outlier data in our main motivation problem, we took advantage of Trimmed Likelihood (TL) Estimators as in @muller2003breakdown and developed an algorithm to employ TL Estimators in multi-level settings which is available in the *mlgSEM* package.
 
-*gmlSEM* uses a text-based interface to define the models. It uses a similar syntax to lavaan (@rosseel2012lavaan) and indeed we used some parts of the codes like the parser from *lavaan* and extended the language. Thus a user familiar with *lavaan* syntax can start developing the codes by learning the extended syntax.
+*gmlSEM* uses a text-based interface to define the models. It uses a similar syntax to lavaan (@rosseel2012lavaan). Indeed, we have used some parts of the codes like the parser from *lavaan* and have extended the language. Thus, a user familiar with *lavaan* syntax can start developing the codes by learning the extended syntax.
 
-The extended syntax helps to:
+The extended syntax helps you to:
 
--   define levels (or clusters) in the data,
+-   define levels (or clusters) in the data
 
--   introduce (named) random terms in the model,
+-   introduce (named) random terms in the model
 
--   set the desired distributions for reponse models
+-   set the desired distributions for response models
 
 ## Extended Syntax
 
-Basically, the *gmlSEM* syntax for defining Multi-Level Generalized SEM is an extended version of *lavaan* syntax (@rosseel2012lavaan). So if you are not familiar with lavaan syntax, read the [lavaan manual](https://lavaan.ugent.be/tutorial/tutorial.pdf) first and continue reading the *gmlSEM* extended syntax. Starting with the *lavaan* syntax, in *gmlSEM* extended syntax you have anything you used to have with *lavaan* syntax, except in the way we define level blocks.
+Basically, the *gmlSEM* syntax for defining Generalized Multi-Level SEM is an extended version of *lavaan* syntax (@rosseel2012lavaan). So if you are not familiar with lavaan syntax, read the [lavaan manual](https://lavaan.ugent.be/tutorial/tutorial.pdf) first and continue reading the *gmlSEM* extended syntax. Starting with the *lavaan* syntax, in *gmlSEM* extended syntax you have anything you used to have with *lavaan* syntax, except in the way we define level blocks.
 
-In a glimpse the extended *gmlSEM* syntax helps you to define hierarchy structure of data using `level:` command for Multi-Level SEM. You can use `family:` command to define the family of distributions of response variables and also use copula functions to imply conditional dependency in a set of response variables varying at the same level. You can define random terms in the regression blocks and reuse them as response or covariate terms in other regression models. Using *gmlSEM* syntax you can also fit semi-parameteric regression models by using `s()` terms in the regression block which add smooth terms to the regression model, like `y=s(x)`. See `?gmlSEM::s` to learn more. Additionally *gmlSEM* syntax encompasses other features such as *ellipsis* and *alias*, so you can more easily work around the codes to develop your *gmlSEM* models. Though in *gmlSEM*, *ellipsis* is not a necessary part, it helps alot to achieve a concise presentation of the model. Hence we start with introducing this easy feature and other easy parts, and then will continue with the *level* and *family* blocks.
+In a glimpse, the extended *gmlSEM* syntax helps you to define hierarchical structure of data using `level:` command for Multi-Level SEM. You can use `family:` command to define the family of distributions of response variables and also use copula functions to imply conditional dependency in a set of response variables varying at the same level. You can define random terms in the regression blocks and reuse them as response or covariate terms in other regression models. Using *gmlSEM* syntax, you can also fit semi-parameteric regression models by using `s()` terms in the regression block which add smooth terms to the regression model, like `y=s(x)`. See `?gmlSEM::s` to learn more. Additionally, *gmlSEM* syntax encompasses other features such as *ellipsis* and *alias*, so you can more easily work around the codes to develop your *gmlSEM* models. Though in *gmlSEM*, *ellipsis* is not a necessary part, it helps a lot to achieve a concise presentation of the model. Hence, we start with introducing this easy feature and other easy parts, and then will continue with the *level* and *family* blocks.
 
-During this tutorial, we use `gmlSEM::AttitudeDataset`. It is a simulated data in which the attitude of students is recorded in variables a1,...,a5 and the performance of students in three major courses are recorded as p1, p2, p3. Subjects are clustered in classes within schools, and the school id and class id for each subject are specified in variables *school* and *class*.
+During this tutorial, we use `gmlSEM::AttitudeDataset`. It is a simulated data in which the attitude of students is recorded in variables a1,...,a5 and the performance of students in three major courses are recorded as p1, p2, p3. The subjects are clustered in classes within schools, and the school id and class id for each subject are specified in variables *school* and *class*.
 
 ### Ellipsis
 
-In *gmlSEM*, you can use ellipsis `...` to avoid writing a sequence of variables whenever it make sense. For example in *gmlSEM* syntax, `y1,...,y5` is a short version of y1,y2,y3,y4,y5 and `y1+...+y5` is a short version of y1+y2+y3+y4+y5. Also `y1a+...+y5a` is the short version of y1a+y2a+y3a+y4a+y5a, and `y1a,...,y1e` is a short version of y1a,y1b,y1c,y1d,y1e. In a *gmlSEM* model, `...` simply will be replaced by the missed part of the sequence. The parser is moderately smart, and you can use ellipsis to concise any sequence that of the template is easy to infer. If helps you can add the first two elements of the sequence to let the parser infer the whole sequence. For example `y2,y4,.,y10` is a short version of y2,y4,y6,y8,y10, and `y11,y12,...,y112` is the short version of y11,y12,y13,y14,y15,y16,y17,y18,y19,y110,y111,y112, and `y1a,y2b,...,y5e` is the short version of y1a,y2b,y3c,y4d,y5e.
+In *gmlSEM*, you can use ellipsis `...` to avoid writing a long sequence of variables whenever it make sense. For example in *gmlSEM* syntax, `y1,...,y5` is a short version of y1, y2, y3, y4, y5 and `y1+...+y5` is a short version of y1+y2+y3+y4+y5. Also `y1a+...+y5a` is the short version of y1a+y2a+y3a+y4a+y5a, and `y1a,...,y1e` is a short version of y1a, y1b, y1c, y1d, y1e. In a *gmlSEM* model, `...` simply will be replaced by the missed part of the sequence. The parser is moderately smart, and you can use ellipsis to abridge any sequence whose template is easy to infer. If it helps, you can add the first two elements of the sequence to let the parser infer the whole sequence. For example `y2,y4,...,y10` is a short version of y2, y4, y6, y8, y10, and `y11,y12,...,y112` is the short version of y11, y12, y13, y14, y15, y16, y17, y18, y19, y110, y111, y112, and `y1a,y2b,...,y5e` is the short version of y1a, y2b, y3c, y4d, y5e. To ensure that the parser understood you well, you can print the digested syntax with `syntax(model,ellipsis.expand=TRUE)`.
 
-To ensure that the parser understood you well, you can print the digested syntax with `syntax(model,ellipsis.expand=TRUE)`. In the case of using ellipsis in the syntax, you can use the same convention to name the parameters,
+In the case of using ellipsis in the syntax, you can use the same convention to name the parameters,
 
 ::: {#exm-ellipsis2}
 ## Labeling parameters using ellipsis
@@ -39,26 +39,26 @@ To ensure that the parser understood you well, you can print the digested syntax
     model<-'at  =~ lambda1*a1 + ... + lambda5*a5'
 :::
 
-In @exm-ellipsis2 a latent variable is defined using five indicators a1, a2, a3, a4, a5 with corresponding factor loadings lambda1, lambda2, lambda3, lambda4, lambda5.
+In @exm-ellipsis2, a latent variable is defined by using five indicators a1, a2, a3, a4, a5 with their corresponding factor loadings lambda1, lambda2, lambda3, lambda4, lambda5.
 
 ### Alias
 
-Aliases are convenient for defining short and long version of variable and parameter names to have a concise code and clear outputs. It happens that you want to use the short version of a variable or parameter to have a more concise code, and you want to print the full name in the outputs. To do this you can define variable aliases with keyword `as` like
+Aliases are convenient for defining short and long version of variable and parameter names to have a concise code and clear outputs. It may happen that you would like to use the short version of a variable or parameter to have a more concise code, and you would like to print its full name in the outputs. To do this, you can define variable aliases with keyword `as` like
 
     dp as depression
 
-Consequently you can use *dp* and *depression* interchangeably in the code, while by convenient the right hand side of `as` keyword is displayed in the outputs. You can use aliases for any latent or observed variable or any parameter you define in the model. You can merge aliases in to a single line to define aliases for a set of variables or parameters at once, proviso that the length of sequence on the left and right side are the same, some examples are
+Consequently, you can use *dp* and *depression* interchangeably in the code, while by convenient the right hand side of `as` keyword is displayed in the outputs. You can use alias for any latent or observed variable or any parameter you define in the model. You can merge aliases into a single line to define aliases for a set of variables or parameters at once with the proviso that the length of sequences on the left and right hand sides are the same. Some examples are
 
     p1,p2,p3   as MathScore,PhysicsScore,ChemistryScore
     a1,..., a9 as StudentAttitude1,...,StudentAttitude9
 
-When defining aliases you are free to use any character including space on the right hand side of `as` keyword, however if you use special characters or strings such space, `,`, `+` or `=~` then you can not use the alias on the right hand side in the family, regression or measurement blocks. Variable and parameter aliases can also be defined in the `gmlSEM` function by passing an *alias* argument to the function:
+When you define aliases, you are free to use any character including space on the right hand side of `as` keyword. However, if you use special characters or strings such as space, `,`, `+` or `=~`, then you can not use the alias on the right hand side in the family, regression or measurement blocks. The variable and parameter aliases can also be defined in the `gmlSEM` function by passing an *alias* argument to the function:
 
-    gmlSEM<-gmlSEM(..., alias=c("p"="depression"))
+    gmlSEM<-gmlSEM(..., alias=c("dp"="depression"))
 
 ### Random terms
 
-In *gmlSEM* you can use random terms in the regression models, as you do it in `lme4::lmer`. In the following example we use a random intercept to define a variance component factor model for attitude in `gmlSEM::AttitudeData`.
+In *gmlSEM*, you can use random terms in the regression models as you do it in `lme4::lmer`. In the following example, we use a random intercept to define a variance component factor model for attitude in `gmlSEM::AttitudeData`.
 
 ::: {#exm-exam01}
 ## Variance-component factor model
@@ -76,7 +76,7 @@ In *gmlSEM* you can use random terms in the regression models, as you do it in `
 ::: callout-note
 ## Intercept in regression models
 
-You can explicitly include or exclude intercept in the regression models by adding one of the values -1\|0\|1 to the model. By default, in *gmlSEM* the regression models in which the response is a latent variable does not have an intercept while a regression model in which the response is an observed variable includes an intercept. Thus the '0' in the regression model in previous example is redundant and is considered by default in *gmlSEM*.
+You can explicitly include or exclude intercept in the regression models by adding one of the values -1\|0\|1 to the model. By default, in *gmlSEM*, the regression models in which the response is a latent variable does not have an intercept while a regression model in which the response is an observed variable includes an intercept. Thus the '0' in the regression model in previous example is redundant and is considered by default in *gmlSEM*.
 :::
 
 You can assign name to a random term, so then you can use it as a response or covariate term in other regression models. In *gmlSEM*, you can use the name specifier operator `[as .]` to assign name to a random term in the regression model as in the following example. Notice that you can use name specifier operator `[as .]` only after random terms in the regression models.
@@ -94,9 +94,9 @@ You can assign name to a random term, so then you can use it as a response or co
     gmlSEM<-gmlSEM(model,AttitudeData)
 :::
 
-In the previous example we use the name specifier operator `[as .]` to assign the name '*c.c*' to the random intercept (the random intercept in this model can be interpreted as 'class climate'). If you do not assign name to the random terms, *gmlSEM* automatically assign names to the random terms by convention with the template *response.level.covariate*. For example in `at = 0 + (1 + x |class)`, the *gmlSEM* assign names `at.class.1` and `at.class.x` by convention to the random intercept and random slop terms, respectively.
+In the previous example, the name specifier operator `[as .]` is used to assign the name 'c.c' to the random intercept (the random intercept in this model can be interpreted as 'class climate'). If you do not assign names to the random terms, *gmlSEM* automatically assigns names to the random terms by convention with the template *response.level.covariate*. For example in `at = 0 + (1 + x |class)`, the *gmlSEM* assign names `at.class.1` and `at.class.x` by convention to the random intercept and random slop terms, respectively.
 
-As in *lavaan*, in measurement and regression models you can assign labels to the parameters of the model using pre-multiplication mechanism (using `*` operator). In a regression model, pre-multiplication mechanism assign parameter labels to either regression coefficient or random term's standard deviation, depending it is a fixed term or random term. Thus in the following model `beta` refers to the regression coefficient of the fixed term `x`, and `c.c.std` refers to the standard deviation of the random intercept term in the model.
+Similar to *lavaan*, in the measurement and regression models, you can assign labels to the parameters of the model using pre-multiplication mechanism (using `*` operator). In a regression model, pre-multiplication mechanism assigns parameter labels to either regression coefficients or random terms' standard deviation, depending it is a fixed term or random term. Thus, in the following model, `beta` refers to the regression coefficient of the fixed term `x`, and `c.c.std` refers to the standard deviation of the random intercept term in the model.
 
 <div>
 
@@ -113,9 +113,9 @@ As in *lavaan*, in measurement and regression models you can assign labels to th
 
 ### Level
 
-In a Mult-Level SEM, for the data is assumed a hierarchy structure. The observed and latent variables vary at different levels. In *gmlSEM* you can use the `level:` block to specify the levels and nested levels and use the phrase `vary at level` or its variant `varies at level` to specify which latent or observed variable vary at which level if necessary. In a Multi-Level model at *gmlSEM*, we use 'record' and 'elementary unit' interchangeably to refer to the units at the lowest level. The data can be provided in *gmlSEM* with one or more data frame. When the *gmlSEM* is provided by a data frame, an elementary unit is simply a row in the data frame. When multiple data frames feed to *gmlSEM*, an elementary unit is a row in the data frame representing data at the lowest level.
+In a Multi-Level SEM, it is assumed that the data has a multi-layer clustered structure. The observed and latent variables vary at different levels. In *gmlSEM*, you can use the `level:` command to specify the levels and nested levels and use the phrase `vary at level` or its variant `varies at level` to specify which latent or observed variable varies at which level if necessary. In a Multi-Level model at *gmlSEM*, we use 'record' and 'elementary unit' interchangeably to refer to the units at the lowest level. The data can be provided in *gmlSEM* with one or more data frame. When the *gmlSEM* is provided by a data frame, an elementary unit is simply a row in the data frame. When multiple data frames feed to *gmlSEM*, an elementary unit is a row in the data frame representing data at the lowest level.
 
-Considering simulated dataset `gmlSEM::AttitudeData`. Students attitude is recorded in variables a1, ..., a5 and the performance of students in three major courses are recorded as p1, p2, p3. Subjects are clustered in classes and schools, and the school id and class id for each subject are specified in variables *school* and *class*. In *gmlSEM*, to define a multi-level factor model, we can use one or more `level:` blocks to specify the levels,
+Consider the simulated dataset `gmlSEM::AttitudeData`. Students' attitudes are recorded in variables a1,...,a5 and the performances of students in three major courses are recorded as p1, p2, p3. The subjects are clustered in classes and schools, and the school id and class id for each subject are specified in variables *school* and *class*. In *gmlSEM*, to define a Multi-Level factor model, we can use one or more `level:` blocks to specify the levels,
 
 ::: {#exm-lev1}
 ## Factor model with two levels
@@ -128,9 +128,9 @@ Considering simulated dataset `gmlSEM::AttitudeData`. Students attitude is recor
     s.c =~ a1 + ... + a5
 :::
 
-In @exm-lev1 a factor model with two levels is defined. The first level is 'base' level encompasses elementary units, and the second level is defined by variable school with `level: school`. The latent variable *s.c* as 'school climate' is defined that varies at the second level.
+In @exm-lev1 a factor model with two levels is defined. The first level is 'base' level encompasses elementary units, and the second level is defined by variable school with `level: school`, and the latent variable *s.c* as 'school climate' varies at the second level.
 
-The next model, defines three factor models in a three level model.
+The next model defines three measurement models for three latent variables in a three level model.
 
 ::: {#exm-lev2}
 ## Factor model with three levels
@@ -149,11 +149,11 @@ The next model, defines three factor models in a three level model.
     s.p,c.p =~ p1 + ... + p5
 :::
 
-In @exm-lev2 the second level is class nested within school as the third level. Both 2^nd^ and 3^rd^ level and their nested structure is understood in the second line, and hence the first line is redundant. The model will remain unchanged if you omit the first line.
+In @exm-lev2, the second level is class nested within school as the third level. Both 2^nd^ and 3^rd^ levels and their nested structure are understood in the second line, and hence the first line is redundant. The model will remain unchanged if you omit the first line.
 
 For models with higher number of levels, you can use multiple `within` keyword in a single `level:` command to specify the nested structure of the levels.
 
-Combining random effects in SEM make the models more flexible and easy to write and interpret in some scenarios. To see an example, we will rewrite an equivalent form of the variance-component factor model in @exm-exam1 in terms of a two-level factor model. That is to define two latent variables with the same factor model, one varies at the base level and the other one varies at the level class named 'class climate', with a constraint that factor loadings are equal in both factor models.
+Combining random effects in SEM make the models more flexible and easy to write and interpret in some scenarios. To see an example, we will rewrite an equivalent form of the variance-component factor model in @exm-exam1 in terms of a two-level factor model. That is, to define two latent variables with the same factor model, one varies at the base level and the other one varies at the level class named 'class climate', with a constraint that factor loadings are equal in both factor models.
 
 ::: {#exm-exam2}
 ## Variance-component factor model-hard syntax
@@ -170,7 +170,7 @@ Combining random effects in SEM make the models more flexible and easy to write 
             lambda1==1'
 :::
 
-In @exm-exam2 a level is defined and a latent variable '*c.c*' as 'class climate' which varies at this level. Two latent factors 'attitude' and 'class climate' are defined with a constraint that factor loadings are equal in both factor model, while attitude varies at the 'base' level and 'class climate' varies at level 'class'. The two factor models could also be combined into a single line as
+In @exm-exam2, a level is defined and a latent variable '*c.c*' as 'class climate' which varies at this level. Two latent factors 'attitude' and 'class climate' are defined with a constraint that factor loadings are equal in both factor model, while attitude varies at the level 'base' and 'class climate' varies at the level 'class'. The two factor models could also be combined into a single line as
 
             c.c,at =~ lambda1*a1 + ... + lambda5*a5
 
@@ -179,9 +179,9 @@ In @exm-exam2 a level is defined and a latent variable '*c.c*' as 'class climate
 
 It is a good practice to use `vary at level` phrase and explicitly list all *latent variables and observed response variables* that vary at the second level or higher, though it is not always necessary. If the level at which an observed response variable or a latent variable varies is not specified in the model, *gmlSEM* will infer it from data and model.
 
-Concerning the observed response variables, *gmlSEM* will scan the variable and will identify the level at which the given variable varies, and concerning the latent variables, *gmlSEM* infers the level from the measurement models. If the level is not specified for a latent variable, *gmlSEM* will produce a warning and will consider the lowest level at which all the indicator variables vary at that level or a lower sublevel. You can see a report from the multi-level structure of the model by `levels(model)`. See `?gmlSEM::levels` to learn more.
+Concerning the observed response variables, *gmlSEM* will scan the variables and will identify the levels at which the given variables vary, and concerning the latent variables, *gmlSEM* infers the levels from the measurement models. If the level is not specified for a latent variable, *gmlSEM* will produce a warning and will consider the lowest level at which all the indicator variables vary at that level or a lower sublevel. You can see a report from the multi-level structure of the model by `levels(model)`. See `?gmlSEM::levels` to learn more.
 
-There is no need to list the observed response variables vary at the '*base*' level, however you can do it by
+There is no need to list the observed response variables vary at the level '*base*', however you can do it by
 
     y varies at level 1
 
