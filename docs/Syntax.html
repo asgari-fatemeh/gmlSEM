@@ -221,9 +221,10 @@ Specifying the levels at which response variables vary at:
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p>It is a good practice to use <code>vary at level</code> phrase and explicitly list all latent variables and observed response variables that vary at the second level or higher, though it is not always necessary. If the level at which an observed response variable or a latent variable varies is not specified in the model, <em>gmlSEM</em> will infer it from data and model. Concerning the observed response variables, <em>gmlSEM</em> will scan the variable and will identify the level at which the given variable varies, and concerning the latent variables, <em>gmlSEM</em> infers the level from the measurement models. There is no need to list the variables that varies at the ‘<em>base</em>’ level, however you can do it by</p>
+<p>It is a good practice to use <code>vary at level</code> phrase and explicitly list all latent variables and observed response variables that vary at the second level or higher, though it is not always necessary. If the level at which an observed response variable or a latent variable varies is not specified in the model, <em>gmlSEM</em> will infer it from data and model.</p>
+<p>Concerning the observed response variables, <em>gmlSEM</em> will scan the variable and will identify the level at which the given variable varies, and concerning the latent variables, <em>gmlSEM</em> infers the level from the measurement models. If the level is not specified for a latent variable, <em>gmlSEM</em> will produce a warning and will consider the lowest level at which all the indicator variables vary at that level or a lower sublevel. You can see a report from the multi-level structure of the model by <code>levels(model)</code>. See <code>?gmlSEM::levels</code> to learn more.</p>
+<p>There is no need to list the variables vary at the ‘<em>base</em>’ level, however you can do it by</p>
 <pre><code>y varies at level 1</code></pre>
-<p>If the level is not specified for a latent variable, <em>gmlSEM</em> will produce a warning and will consider the lowest level at which all the indicator variables vary at that level or a lower sublevel.</p>
 </div>
 </div>
 <div class="callout-important callout callout-style-default callout-captioned">
@@ -239,7 +240,7 @@ Important
 <p>In a Multi-Level model in <em>gmlSEM</em>, you have to note that</p>
 <ul>
 <li><p>In a regression model, the response variable must vary at the same level or a lower level than the covariates.</p></li>
-<li><p>Consequently in a measurement model, the latent variable must vary at the same level or a higher level than the indicators.</p></li>
+<li><p>In a measurement model, the latent variable must vary at the same level or a higher level than the indicators.</p></li>
 </ul>
 </div>
 </div>
