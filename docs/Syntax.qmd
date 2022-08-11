@@ -250,13 +250,8 @@ When defining the family of distribution for a set of variables, you can also ta
 ::: {#exm-fam2}
 ## Using copula to induce conditional dependency in factor models
 
-    model1<-'family: y1, y2, ..., y5  binomial(link="probit") copula(type="gaussian")
+    model<-'family: y1, y2, ..., y5  binomial(link="probit") copula(type="gaussian")
               eta =~ y1 + ... + y5'
-              
-    model2<-'family: 
-              y1, ..., y5 binomial(link="probit") copula(type="gaussian")
-             family: eta1, eta2 gamma(lin="log") copula(type="gaussian")
-             eta =~ y1 + ... + y5'
 :::
 
 Introducing a copula term in the `family:` command lead to multivariate conditional dependency between the variables in that command provided that they varying at the same level. If the variables vary at different levels, a warning is produced and each set of variables varying at the same level will consider to be conditionally dependent using the introduced copula. For example in the following model, the set of `y1,...,y5` are conditionally dependent according to the Gaussian copula at level class, and `y6,...,y10` are conditionally dependent according to the Gaussian copula at level school.
@@ -283,7 +278,7 @@ In the @exm-fam3, *eta1* is a latent variable vary at level *class*, and *eta2* 
              y6, ..., y10 vary between schools
              
              family: y1, y2, ..., y10 binomial(link="probit") copula(type="gaussian")
-             family: eta1, eta2 gamma(link="log") copula(type="gaussian")
+             family: eta1, eta2 gamma() copula(type="gaussian")
              
              eta1 =~ y1 + ... + y5
              eta2 =~ y6 + ... + y10'

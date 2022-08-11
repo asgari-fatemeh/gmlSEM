@@ -300,13 +300,8 @@ Identifiability of models:
 <p>When defining the family of distribution for a set of variables, you can also take advantage of copula functions to induce the conditional dependency between endogenous observed or latent variables:</p>
 <div id="exm-fam2" class="theorem example">
 <p><span class="theorem-title"><strong>Example 10 (Using copula to induce conditional dependency in factor models) </strong></span></p>
-<pre><code>model1&lt;-'family: y1, y2, ..., y5  binomial(link="probit") copula(type="gaussian")
-          eta =~ y1 + ... + y5'
-          
-model2&lt;-'family: 
-          y1, ..., y5 binomial(link="probit") copula(type="gaussian")
-         family: eta1, eta2 gamma(lin="log") copula(type="gaussian")
-         eta =~ y1 + ... + y5'</code></pre>
+<pre><code>model&lt;-'family: y1, y2, ..., y5  binomial(link="probit") copula(type="gaussian")
+          eta =~ y1 + ... + y5'</code></pre>
 </div>
 <p>Introducing a copula term in the <code>family:</code> command lead to multivariate conditional dependency between the variables in that command provided that they varying at the same level. If the variables vary at different levels, a warning is produced and each set of variables varying at the same level will consider to be conditionally dependent using the introduced copula. For example in the following model, the set of <code>y1,...,y5</code> are conditionally dependent according to the Gaussian copula at level class, and <code>y6,...,y10</code> are conditionally dependent according to the Gaussian copula at level school.</p>
 <div id="exm-fam3" class="theorem example">
@@ -327,7 +322,7 @@ model2&lt;-'family:
          y6, ..., y10 vary between schools
          
          family: y1, y2, ..., y10 binomial(link="probit") copula(type="gaussian")
-         family: eta1, eta2 gamma(link="log") copula(type="gaussian")
+         family: eta1, eta2 gamma() copula(type="gaussian")
          
          eta1 =~ y1 + ... + y5
          eta2 =~ y6 + ... + y10'</code></pre>
