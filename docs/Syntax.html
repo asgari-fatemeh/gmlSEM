@@ -209,7 +209,7 @@ s.p,c.p =~ p1 + ... + p5</code></pre>
 </div>
 <p>In <a href="#exm-exam2">Example&nbsp;6</a>, a level is defined and a latent variable ‘<em>c.c</em>’ as ‘class climate’ which varies at this level. Two latent factors ‘attitude’ and ‘class climate’ are defined with a constraint that factor loadings are equal in both factor model, while attitude varies at the level ‘base’ and ‘class climate’ varies at the level ‘class’. The two factor models could also be combined into a single line as</p>
 <pre><code>        c.c,at =~ lambda1*a1 + ... + lambda5*a5</code></pre>
-<div class="callout-note callout callout-style-default callout-captioned">
+<div class="callout-important callout callout-style-default callout-captioned">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
 <i class="callout-icon"></i>
@@ -219,23 +219,8 @@ Specifying the levels at which variables vary
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p>It is a good practice to use <code>vary at level</code> phrase and explicitly list all <em>latent variables and observed response variables</em> that vary at the second level or higher, though it is not always necessary. If the level at which an observed response variable or a latent variable varies is not specified in the model, <em>gmlSEM</em> will infer it from data and model.</p>
-<p>Concerning the observed response variables, <em>gmlSEM</em> will scan the variables and will identify the levels at which the given variables vary, and concerning the latent variables, <em>gmlSEM</em> infers the levels from the measurement models. If the level is not specified for a latent variable, <em>gmlSEM</em> will produce a warning and will consider the lowest level at which all the indicator variables vary at that level or a lower sublevel. You can see a report from the multi-level structure of the model by <code>levels(model)</code>. See <code>?gmlSEM::levels</code> to learn more.</p>
-<p>There is no need to list the observed response variables vary at the level ‘<em>base</em>’, however you can do it by</p>
+<p>In <em>gmlSEM</em>, you have to use <code>vary at level</code> phrase and explicitly list all <em>latent variables and observed response variables</em> that vary at the second level or higher. If for a latent variable or observed response variable the level is not specified, the <em>gmlSEM</em> will consider the level ‘base’ for it. There is no need to list the latent variables and observed response variables varying at the level ‘<em>base</em>’, however you can do it by</p>
 <pre><code>y varies at level 1</code></pre>
-<p><del>On the other hand we recommend that you list all of the latent variables (endogenous or exogenous) and specify the level at which they vary, even those who varies at the first level. This make the model clear to read for other users, and prevent <em>glmSEM</em> to infer about the corresponding levels of latent variables which are not listed.</del></p>
-</div>
-</div>
-<div class="callout-important callout callout-style-default callout-captioned">
-<div class="callout-header d-flex align-content-center">
-<div class="callout-icon-container">
-<i class="callout-icon"></i>
-</div>
-<div class="callout-caption-container flex-fill">
-Important
-</div>
-</div>
-<div class="callout-body-container callout-body">
 <p>In a Multi-Level model in <em>gmlSEM</em>, you have to note that</p>
 <ul>
 <li><p>In a regression model, the response variable must vary at the same level or a lower level than the covariates.</p></li>
@@ -276,7 +261,7 @@ Identifiability of models
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p>In factor models you have to take care of identifiablity by putting a constraint on the factor loadings or the variance of latent variable. If you did not specify the necessary constraint, <em>gmlSEM</em> will set the first factor loading to one by default. You can ether set the variance to one by</p>
+<p>In factor models, you have to take care of identifiablity by putting a constraint on the factor loadings or the variance of latent variable. If you did not specify the necessary constraints, <em>gmlSEM</em> will set the first factor loading to one by default. You can either set the variance to one by</p>
 <pre><code>at ~~ 1*at</code></pre>
 <p>or set a factor loading by pre-multiplication mechanism like</p>
 <pre><code>at =~ a1 + 1*a2 + a3 + a4 + a5</code></pre>
@@ -285,7 +270,7 @@ Identifiability of models
 </section>
 <section id="family" class="level3">
 <h3 class="anchored" data-anchor-id="family">Family</h3>
-<p>In <em>gmlSEM</em> you can define the distribution of endogenous observe or latent variables in a <code>family:</code> command. In the following example we define a factor model with zero-inflated beta distribution for indicators. You can use many other distributions in <em>gmlSEM</em>. See <code>?gmlSEM::family</code> to learn more about different distributions that is provided in the package. You can also define your own distribution to use in <em>gmlSEM</em>.</p>
+<p>In <em>gmlSEM</em>, you can define the distribution of endogenous observed or latent variables in a <code>family:</code> command. In the following example, we define a factor model with zero-inflated beta distribution for indicators. You can use many other distributions in <em>gmlSEM</em>. See <code>?gmlSEM::family</code> to learn more about different distributions that is provided in the package. You can also define your own distribution to use in <em>gmlSEM</em>.</p>
 <p>In the following two examples you can see how we can use the family: block to fit a probit regression model and a factor model with zero-inflated beta indicators:</p>
 <div id="exm-fam5" class="theorem example">
 <p><span class="theorem-title"><strong>Example 7 (A probit regression model) </strong></span></p>
@@ -303,7 +288,7 @@ Identifiability of models
 <pre><code>model&lt;-'family: y1, y2, ..., y5  binomial(link="probit") copula(type="gaussian")
         eta =~ y1 + ... + y5'</code></pre>
 </div>
-<p>Introducing a copula term in the <code>family:</code> command lead to multivariate conditional dependency between the variables in that command provided that they varying at the same level. If the variables vary at different levels, a warning is produced and each set of variables varying at the same level will consider to be conditionally dependent using the introduced copula. For example in the following model, the set of <code>y1,...,y5</code> are conditionally dependent according to the Gaussian copula at level class, and <code>y6,...,y10</code> are conditionally dependent according to the Gaussian copula at level school.</p>
+<p>Introducing a copula term in the <code>family:</code> command leads to multivariate conditional dependency between the variables in that command provided that they vary at the same level. If the variables vary at different levels, a warning is produced and each set of variables varying at the same level will be considered to be conditionally dependent using the introduced copula. For example in the following model, the set of <code>y1,...,y5</code> are conditionally dependent according to the Gaussian copula at level class, and <code>y6,...,y10</code> are conditionally dependent according to the Gaussian copula at level school.</p>
 <div id="exm-fam3" class="theorem example">
 <p><span class="theorem-title"><strong>Example 10 (Using copula to induce conditional dependency in a multi-level factor model) </strong></span></p>
 <pre><code>model&lt;-'level:  class within school
@@ -315,7 +300,7 @@ Identifiability of models
         eta1 =~ y1 + ... + y5
         eta2 =~ y6 + ... + y10'</code></pre>
 </div>
-<p>In the <a href="#exm-fam3">Example&nbsp;10</a>, <em>eta1</em> is a latent variable vary at level <em>class</em>, and <em>eta2</em> is a latent variable vary at level <em>school</em>. Adding a <code>family:</code> command with copula for defining the family of distribution for these two variable producing a warning and <em>gmlSEM</em> simply ignore the copula structure:</p>
+<p>In <a href="#exm-fam3">Example&nbsp;10</a>, <em>eta1</em> is a latent variable varying at level <em>class</em>, and <em>eta2</em> is a latent variable varying at level <em>school</em>. Adding a <code>family:</code> command with copula for defining the family of distributions for these two variable produces a warning and <em>gmlSEM</em> simply ignores the copula structure:</p>
 <div>
 <pre><code>model&lt;-'level: class within school
         y1, ..., y5  vary at level class
@@ -347,12 +332,12 @@ Note
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p>A Gaussian family with identity link function accompanied by a Gaussian copula is equivalent to the multivariate normal distribution for the set of variables. When a Gaussian cupula is added in the <code>family:</code> command, all pairwise conditional covariances are free to estimate unless you use <code>~~</code> operator to set some parameters to zero or another constant value like:</p>
+<p>A Gaussian family with identity link function accompanied by a Gaussian copula is equivalent to the multivariate normal distribution for the set of variables. When a Gaussian copula is added in the <code>family:</code> command, all pairwise conditional covariances are free to estimate unless you use <code>~~</code> operator to set some parameters equal to zero or another constant value like:</p>
 <pre><code>model&lt;-'family: y1, y2, ..., y5 binomial(link="logit") copula(type="gaussian")
          
         eta1 =~ y1 + ... + y5
         y1 ~~ 0*y2'</code></pre>
-<p>You can also set the free parameters to zero by default in the copula term, and use the ~~ operator to specify those conditional covariances to be estimated</p>
+<p>You can also set the free parameters equal to zero by default in the copula term, and use the ~~ operator to specify those conditional covariances that should be estimated</p>
 <pre><code>model&lt;-'family: y1, y2, ..., y5 binomial(link="logit") copula(type="gaussian",covariance=0)
          
          eta1 =~ y1 + ... + y5
