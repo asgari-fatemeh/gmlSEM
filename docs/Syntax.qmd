@@ -49,8 +49,8 @@ Aliases are convenient for defining short and long version of variable and param
 
 Consequently you can use *dp* and *depression* interchangeably in the code, while by convenient the right hand side of `as` keyword is displayed in the outputs. You can use aliases for any latent or observed variable or any parameter you define in the model. You can merge aliases in to a single line to define aliases for a set of variables or parameters at once, proviso that the length of sequence on the left and right side are the same, some examples are
 
-    p1, p2, p3 as MathScore, PhysicsScore, ChemistryScore
-    a1, ...,a9 as StudentAttitude1, ..., StudentAttitude9
+    p1, p2, p3  as MathScore, PhysicsScore, ChemistryScore
+    a1, ..., a9 as StudentAttitude1, ..., StudentAttitude9
 
 When defining aliases you are free to use any character including space on the right hand side of `as` keyword, however if you use special characters or strings such space, `,`, `+` or `=~` then you can not use the alias on the right hand side in the family, regression or measurement blocks. Variable and parameter aliases can also be defined in the `gmlSEM` function by passing an *alias* argument to the function:
 
@@ -121,14 +121,14 @@ Considering simulated dataset `gmlSEM::AttitudeData`. Students attitude is recor
 ## Factor model with two levels
 
     level: school
-    s.a as school climate
+    s.c as school climate
 
-    s.a varies at level school
+    s.c varies at level school
 
-    s.a =~ a1 + ... + a5
+    s.c =~ a1 + ... + a5
 :::
 
-In @exm-lev1 a factor model with two levels is defined. The first level is 'base' level encompasses elementary units, and the second level is defined by variable school with `level: school`. The latent variable s.a as 'school climate' is defined that varies at the second level.
+In @exm-lev1 a factor model with two levels is defined. The first level is 'base' level encompasses elementary units, and the second level is defined by variable school with `level: school`. The latent variable *s.c* as 'school climate' is defined that varies at the second level.
 
 The next model, defines three factor models in a three level model.
 
@@ -138,14 +138,14 @@ The next model, defines three factor models in a three level model.
     level: school
     level: class within school
 
-    s.a as school climate
+    s.c as school climate
     s.p as school performance
     c.p as class performance
 
-    s.p,s.a vary at level school
+    s.p,s.c vary at level school
     c.p     varies at level class
 
-    s.a     =~ a1 + ... + a5
+    s.c     =~ a1 + ... + a5
     s.p,c.p =~ p1 + ... + p5
 :::
 
@@ -159,7 +159,7 @@ Combining random effects in SEM make the models more flexible and easy to write 
 ## Variance-component factor model-hard syntax
 
     model<-'level: class
-            at as attitude
+            at  as attitude
             c.c as class climate
               
             c.c varies at level class
@@ -170,9 +170,9 @@ Combining random effects in SEM make the models more flexible and easy to write 
             lambda1==1'
 :::
 
-In @exm-exam2 a level is defined and a latent variable 'c.c' as 'class climate' which varies at this level. Two latent factors 'attitude' and 'class climate' are defined with a constraint that factor loadings are equal in both factor model, while attitude varies at the 'base' level and 'class climate' varies at level 'class'. The two factor models could also be combined into a single line as
+In @exm-exam2 a level is defined and a latent variable '*c.c*' as 'class climate' which varies at this level. Two latent factors 'attitude' and 'class climate' are defined with a constraint that factor loadings are equal in both factor model, while attitude varies at the 'base' level and 'class climate' varies at level 'class'. The two factor models could also be combined into a single line as
 
-            c.c,at=~lambda1*a1 + ... + lambda5*a5
+            c.c,at =~ lambda1*a1 + ... + lambda5*a5
 
 ::: callout-note
 ## Specifying the levels at which variables vary
@@ -244,7 +244,7 @@ In the following two examples you can see how we can use the family: block to fi
 ## Factor model with zero-inflated beta indicators
 
     model<-'family: y1, y2, ..., y5 zoib(link=c("probit","logit"),type="[0,1]")
-              eta =~ y1 + ... + y5'
+            eta =~ y1 + ... + y5'
 :::
 
 When defining the family of distribution for a set of variables, you can also take advantage of copula functions to induce the conditional dependency between endogenous observed or latent variables:
@@ -253,7 +253,7 @@ When defining the family of distribution for a set of variables, you can also ta
 ## Using copula to induce conditional dependency in factor models
 
     model<-'family: y1, y2, ..., y5  binomial(link="probit") copula(type="gaussian")
-              eta =~ y1 + ... + y5'
+            eta =~ y1 + ... + y5'
 :::
 
 Introducing a copula term in the `family:` command lead to multivariate conditional dependency between the variables in that command provided that they varying at the same level. If the variables vary at different levels, a warning is produced and each set of variables varying at the same level will consider to be conditionally dependent using the introduced copula. For example in the following model, the set of `y1,...,y5` are conditionally dependent according to the Gaussian copula at level class, and `y6,...,y10` are conditionally dependent according to the Gaussian copula at level school.
@@ -262,13 +262,13 @@ Introducing a copula term in the `family:` command lead to multivariate conditio
 ## Using copula to induce conditional dependency in a multi-level factor model
 
     model<-'level:  class within school
-             y1, ..., y5  vary at level class
-             y6, ...,y10 vary at level school
+            y1, ..., y5  vary at level class
+            y6, ...,y10 vary at level school
              
-             family: y1, y2, ..., y10 binomial(link="probit") copula(type="gaussian")
+            family: y1, y2, ..., y10 binomial(link="probit") copula(type="gaussian")
              
-             eta1 =~ y1 + ... + y5
-             eta2 =~ y6 + ... + y10'
+            eta1 =~ y1 + ... + y5
+            eta2 =~ y6 + ... + y10'
 :::
 
 In the @exm-fam3, *eta1* is a latent variable vary at level *class*, and *eta2* is a latent variable vary at level *school*. Adding a `family:` command with copula for defining the family of distribution for these two variable producing a warning and gmlSEM simply ignore the copula structure:
@@ -276,14 +276,14 @@ In the @exm-fam3, *eta1* is a latent variable vary at level *class*, and *eta2* 
 <div>
 
     model<-'level: class within school
-             y1, ..., y5  vary between classes
-             y6, ..., y10 vary between schools
+            y1, ..., y5  vary between classes
+            y6, ..., y10 vary between schools
              
-             family: y1, y2, ..., y10 binomial(link="probit") copula(type="gaussian")
-             family: eta1, eta2 gamma() copula(type="gaussian")
-             
-             eta1 =~ y1 + ... + y5
-             eta2 =~ y6 + ... + y10'
+            family: y1, y2, ..., y10 binomial(link="probit") copula(type="gaussian")
+            family: eta1, eta2 gamma() copula(type="gaussian")
+            
+            eta1 =~ y1 + ... + y5
+            eta2 =~ y6 + ... + y10'
 
 </div>
 
@@ -301,12 +301,12 @@ You can also use copula functions to induce conditional dependency between diffe
 :::
 
 ::: callout-note
-A Gaussian family with identity link function accompanied by a Gaussian copula is equivalent to the multivariate normal distribution for the set of variables. When a Gaussian cupula is added in the `family:` command, all pairwise conditional covariances are free to estimate unless you use `~~` operator to set some parameters to zero like:
+A Gaussian family with identity link function accompanied by a Gaussian copula is equivalent to the multivariate normal distribution for the set of variables. When a Gaussian cupula is added in the `family:` command, all pairwise conditional covariances are free to estimate unless you use `~~` operator to set some parameters to zero or another constant value like:
 
     model<-'family: y1, y2, ..., y5 binomial(link="logit") copula(type="gaussian")
              
-             eta1 =~ y1 + ... + y5
-             y1 ~~ 0*y2'
+            eta1 =~ y1 + ... + y5
+            y1 ~~ 0*y2'
 
 You can also set the free parameters to zero by default in the copula term, and use the \~\~ operator to specify those conditional covariances to be estimated
 
