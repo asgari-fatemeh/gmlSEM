@@ -229,15 +229,22 @@ or set a factor loading by pre-multiplication mechanism like
 
 ### Family
 
-In *gmlSEM* you can define the distribution of endogenous observe or latent variables either in a `family:` block, or in the regression or measurement block of the model. In the following examples model1 and model2 are identical and define a factor model with zero-inflated beta distribution for indicators. You can use many other distributions in *gmlSEM*. See `?gmlSEM::family` to learn more about different distributions that is provided in the package. You can also define your own distribution to use in *gmlSEM*.
+In *gmlSEM* you can define the distribution of endogenous observe or latent variables in a `family:` command. In the following example we define a factor model with zero-inflated beta distribution for indicators. You can use many other distributions in *gmlSEM*. See `?gmlSEM::family` to learn more about different distributions that is provided in the package. You can also define your own distribution to use in *gmlSEM*.
+
+In the following two examples you can see how we can use the family: block to fit a probit regression model and a factor model with zero-inflated beta indicators:
+
+::: {#exm-fam5}
+## A probit regression model
+
+    model<-'family: y binomial(link="probit")
+            y = x1 + x2'
+:::
 
 ::: {#exm-fam1}
 ## Factor model with zero-inflated beta indicators
 
-    model1<-'family: y1, y2, ..., y5 zoib(link=c("probit","logit"),type="[0,1]")
+    model<-'family: y1, y2, ..., y5 zoib(link=c("probit","logit"),type="[0,1]")
               eta =~ y1 + ... + y5'
-             
-    model2<-'eta =~ y1 + ... + y5, family=zoib(link=c("probit","logit"),type="[0,1]")'
 :::
 
 When defining the family of distribution for a set of variables, you can also take advantage of copula functions to induce the conditional dependency between endogenous observed or latent variables:
@@ -248,12 +255,13 @@ When defining the family of distribution for a set of variables, you can also ta
     model1<-'family: y1, y2, ..., y5  binomial(link="probit") copula(type="gaussian")
               eta =~ y1 + ... + y5'
               
-    model2<-'family: y1, y2, ..., y10 binomial(link="probit") copula(type="gaussian")
+    model2<-'family: 
+              y1, ..., y5 binomial(link="probit") copula(type="gaussian")
              family: eta1, eta2 gamma(lin="log") copula(type="gaussian")
              eta =~ y1 + ... + y5'
 :::
 
-Introducing a copula term in the `family:` comand lead to multivariate conditional dependency between the variables in that command provided that they varying at the same level. If the variables vary at different levels, each set of variables varying at the same level will consider to be conditionally dependent using the introduced copula. For example in the following model, the set of `y1,...,y5` are conditionally dependent according to the Gaussian copula at level class, and `y6,...,y10` are conditionally dependent according to the Gaussian copula at level school.
+Introducing a copula term in the `family:` command lead to multivariate conditional dependency between the variables in that command provided that they varying at the same level. If the variables vary at different levels, a warning is produced and each set of variables varying at the same level will consider to be conditionally dependent using the introduced copula. For example in the following model, the set of `y1,...,y5` are conditionally dependent according to the Gaussian copula at level class, and `y6,...,y10` are conditionally dependent according to the Gaussian copula at level school.
 
 ::: {#exm-fam3}
 ## Using copula to induce conditional dependency in a multi-level factor model
@@ -284,12 +292,17 @@ In the @exm-fam3, *eta1* is a latent variable vary at level *class*, and *eta2* 
 
 </div>
 
-Defining the distribution family in the regression blocks is also possible, however it is not flexible as the `family:` command, for example we cannot use copula to introduce conditional dependencies between non-Gaussian variables, or to take advantage of *ellipsis* to define the distribution family of a set of variables in a single statement. Additionally, you can define the distribution of indicator variables only at a `family:` command.
+You can also use copula functions to induce conditional dependency between different family of distributions by introducing the copula in a separate `family:` command as follow:
 
-::: {#exm-fam5}
-## A probit regression model
+::: {#exm-fam4}
+## Conditional dependency between variables with different distributions:
 
-    model<-'y = x1 + x2, family=binomial(link="probit")'
+    model<-'family: y1, ..., y5  binomial(link="probit")
+            family: y6, ..., y10 beta(link="logit")
+            family: y1, ..., y10 copula(type="gaussian")
+             
+            eta1 =~ y1 + ... + y5
+            eta2 =~ y6 + ... + y10'
 :::
 
 ::: callout-note
