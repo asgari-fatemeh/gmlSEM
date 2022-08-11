@@ -177,7 +177,7 @@ In @exm-exam2 a level is defined and a latent variable 'c.c' as 'class climate' 
             c.c,at=~lambda1*a1 + ... + lambda5*a5
 
 ::: callout-note
-## Specifying the levels at which response variables vary at:
+## Specifying the levels at which response variables vary:
 
 It is a good practice to use `vary at level` phrase and explicitly list all latent variables and observed response variables that vary at the second level or higher, though it is not always necessary. If the level at which an observed response variable or a latent variable varies is not specified in the model, *gmlSEM* will infer it from data and model.
 
