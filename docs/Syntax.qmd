@@ -177,9 +177,9 @@ In @exm-exam2 a level is defined and a latent variable 'c.c' as 'class climate' 
             c.c,at=~lambda1*a1 + ... + lambda5*a5
 
 ::: callout-note
-## Specifying the levels at which response variables vary:
+## Specifying the levels at which variables vary:
 
-It is a good practice to use `vary at level` phrase and explicitly list all latent variables and observed response variables that vary at the second level or higher, though it is not always necessary. If the level at which an observed response variable or a latent variable varies is not specified in the model, *gmlSEM* will infer it from data and model.
+It is a good practice to use `vary at level` phrase and explicitly list all *latent variables and observed response variables* that vary at the second level or higher, though it is not always necessary. If the level at which an observed response variable or a latent variable varies is not specified in the model, *gmlSEM* will infer it from data and model.
 
 Concerning the observed response variables, *gmlSEM* will scan the variable and will identify the level at which the given variable varies, and concerning the latent variables, *gmlSEM* infers the level from the measurement models. If the level is not specified for a latent variable, *gmlSEM* will produce a warning and will consider the lowest level at which all the indicator variables vary at that level or a lower sublevel. You can see a report from the multi-level structure of the model by `levels(model)`. See `?gmlSEM::levels` to learn more.
 
@@ -240,7 +240,7 @@ In *gmlSEM* you can define the distribution of endogenous observe or latent vari
     model2<-'eta =~ y1 + ... + y5, family=zoib(link=c("probit","logit"),type="[0,1]")'
 :::
 
-The advantage of introducing the distribution using the `family:` command is that we can use a copula function to induce the conditional dependency between endogenous observed or latent variables.
+When defining the family of distribution for a set of variables, you can also take advantage of copula functions to induce the conditional dependency between endogenous observed or latent variables:
 
 ::: {#exm-fam2}
 ## Using copula to induce conditional dependency in factor models
@@ -253,7 +253,7 @@ The advantage of introducing the distribution using the `family:` command is tha
              eta =~ y1 + ... + y5'
 :::
 
-Introducing a copula term in the `family:` comand lead to multivariate conditional dependency between the variables in that command provided that they varying in the same level. If the variables vary at different levels, each set of variables varying at the same level will consider to be conditionally dependent using the introduced copula. For example in the following model, the set of `y1,...,y5` are conditionally dependent according to the Gaussian copula at level class, and `y6,...,y10` are conditionally dependent according to the Gaussian copula at level school.
+Introducing a copula term in the `family:` comand lead to multivariate conditional dependency between the variables in that command provided that they varying at the same level. If the variables vary at different levels, each set of variables varying at the same level will consider to be conditionally dependent using the introduced copula. For example in the following model, the set of `y1,...,y5` are conditionally dependent according to the Gaussian copula at level class, and `y6,...,y10` are conditionally dependent according to the Gaussian copula at level school.
 
 ::: {#exm-fam3}
 ## Using copula to induce conditional dependency in a multi-level factor model

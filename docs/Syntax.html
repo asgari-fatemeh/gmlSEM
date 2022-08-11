@@ -217,11 +217,11 @@ s.p,c.p =~ p1 + ... + p5</code></pre>
 <i class="callout-icon"></i>
 </div>
 <div class="callout-caption-container flex-fill">
-Specifying the levels at which response variables vary:
+Specifying the levels at which variables vary:
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p>It is a good practice to use <code>vary at level</code> phrase and explicitly list all latent variables and observed response variables that vary at the second level or higher, though it is not always necessary. If the level at which an observed response variable or a latent variable varies is not specified in the model, <em>gmlSEM</em> will infer it from data and model.</p>
+<p>It is a good practice to use <code>vary at level</code> phrase and explicitly list all <em>latent variables and observed response variables</em> that vary at the second level or higher, though it is not always necessary. If the level at which an observed response variable or a latent variable varies is not specified in the model, <em>gmlSEM</em> will infer it from data and model.</p>
 <p>Concerning the observed response variables, <em>gmlSEM</em> will scan the variable and will identify the level at which the given variable varies, and concerning the latent variables, <em>gmlSEM</em> infers the level from the measurement models. If the level is not specified for a latent variable, <em>gmlSEM</em> will produce a warning and will consider the lowest level at which all the indicator variables vary at that level or a lower sublevel. You can see a report from the multi-level structure of the model by <code>levels(model)</code>. See <code>?gmlSEM::levels</code> to learn more.</p>
 <p>There is no need to list the variables vary at the ‘<em>base</em>’ level, however you can do it by</p>
 <pre><code>y varies at level 1</code></pre>
@@ -294,7 +294,7 @@ Identifiability of models:
          
 model2&lt;-'eta =~ y1 + ... + y5, family=zoib(link=c("probit","logit"),type="[0,1]")'</code></pre>
 </div>
-<p>The advantage of introducing the distribution using the <code>family:</code> command is that we can use a copula function to induce the conditional dependency between endogenous observed or latent variables.</p>
+<p>When defining the family of distribution for a set of variables, you can also take advantage of copula functions to induce the conditional dependency between endogenous observed or latent variables:</p>
 <div id="exm-fam2" class="theorem example">
 <p><span class="theorem-title"><strong>Example 8 (Using copula to induce conditional dependency in factor models) </strong></span></p>
 <pre><code>model1&lt;-'family: y1, y2, ..., y5  binomial(link="probit") copula(type="gaussian")
@@ -304,7 +304,7 @@ model2&lt;-'family: y1, y2, ..., y10 binomial(link="probit") copula(type="gaussi
          family: eta1, eta2 gamma(lin="log") copula(type="gaussian")
          eta =~ y1 + ... + y5'</code></pre>
 </div>
-<p>Introducing a copula term in the <code>family:</code> comand lead to multivariate conditional dependency between the variables in that command provided that they varying in the same level. If the variables vary at different levels, each set of variables varying at the same level will consider to be conditionally dependent using the introduced copula. For example in the following model, the set of <code>y1,...,y5</code> are conditionally dependent according to the Gaussian copula at level class, and <code>y6,...,y10</code> are conditionally dependent according to the Gaussian copula at level school.</p>
+<p>Introducing a copula term in the <code>family:</code> comand lead to multivariate conditional dependency between the variables in that command provided that they varying at the same level. If the variables vary at different levels, each set of variables varying at the same level will consider to be conditionally dependent using the introduced copula. For example in the following model, the set of <code>y1,...,y5</code> are conditionally dependent according to the Gaussian copula at level class, and <code>y6,...,y10</code> are conditionally dependent according to the Gaussian copula at level school.</p>
 <div id="exm-fam3" class="theorem example">
 <p><span class="theorem-title"><strong>Example 9 (Using copula to induce conditional dependency in a multi-level factor model) </strong></span></p>
 <pre><code>model&lt;-'level:  class within school
