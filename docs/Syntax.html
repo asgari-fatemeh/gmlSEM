@@ -150,10 +150,8 @@ gmlSEM&lt;-gmlSEM(model,AttitudeData)</code></pre>
 </div>
 <p>In the previous example we use the suffix operator <code>[as .]</code> to assign the name ‘c.t’ to the random intercept. If you do not assign name to the random terms, <em>gmlSEM</em> automatically assign names to the random terms by convention with the template <em>response.level.covariate</em>. For example in <code>at = 0 + (1 + x |class)</code>, the <em>gmlSEM</em> assign names <code>at.class.1</code> and <code>at.class.x</code> by convention to the random intercept and random slop terms, respectively.</p>
 <p>As in <em>lavaan</em>, in measurement and regression models you can assign parameter labels to the parameters of the model using pre-multiplication mechanism (using <code>*</code> operator). In a regression model, pre-multiplication mechanism assign parameter labels to either regression coefficient or random term’s standard deviation, depending it is a fixed term or random term. Thus in the following example <code>beta</code> refers to the regression coefficient of the fixed term <code>x</code>, and <code>c.t.std</code> refers to the standard deviation of the random intercept term in the model.</p>
-</section>
-</section>
-<section id="variance-component-factor-model-2" class="level2">
-<h2 class="anchored" data-anchor-id="variance-component-factor-model-2">Variance-component factor model</h2>
+<div id="exm-exam02" class="theorem example">
+<p><span class="theorem-title"><strong>Example 4 (Variance-component factor model) </strong></span></p>
 <pre><code>library(gmlSEM)
 
 model&lt;-'at as attitude
@@ -162,13 +160,14 @@ model&lt;-'at as attitude
         at = 0 + beta * x + (c.t.std * 1[as c.t]|class)'
           
 gmlSEM&lt;-gmlSEM(model,AttitudeData)</code></pre>
+</div>
 </section>
 <section id="level" class="level3">
 <h3 class="anchored" data-anchor-id="level">Level</h3>
 <p>In a Mult-Level SEM, for the data is assumed a hierarchy structure. The observed and latent variables vary at different levels. In <em>gmlSEM</em> you can use the <code>level:</code> block to specify the levels and nested levels and use the phrase <code>vary at level</code> or its variant <code>varies at level</code> to specify which latent or observed variable vary at which level if necessary. In a Multi-Level model at <em>gmlSEM</em>, we use ‘record’ and ‘elementary unit’ interchangeably to refer to the units at the lowest level. The data can be provided in <em>gmlSEM</em> with one or more data frame. When the <em>gmlSEM</em> is provided by a data frame, an elementary unit is simply a row in the data frame. When multiple data frames feed to <em>gmlSEM</em>, an elementary unit is a row in the data frame representing data at the lowest level.</p>
 <p>Considering simulated dataset <code>gmlSEM::AttitudeData</code>. Students attitude is recorded in variables a1, …, a5 and the performance of students in three major courses are recorded as p1, p2, p3. Subjects are clustered in classes and schools, and the school id and class id for each subject are specified in variables <em>school</em> and <em>class</em>. In <em>gmlSEM</em>, to define a multi-level factor model, we can use one or more <code>level:</code> blocks to specify the levels,</p>
 <div id="exm-lev1" class="theorem example">
-<p><span class="theorem-title"><strong>Example 4 (Factor model with two levels) </strong></span></p>
+<p><span class="theorem-title"><strong>Example 5 (Factor model with two levels) </strong></span></p>
 <pre><code>level: school
 s.a as school climate
 
@@ -176,10 +175,10 @@ s.a varies at level school
 
 s.a =~ a1 + ... + a5</code></pre>
 </div>
-<p>In <a href="#exm-lev1">Example&nbsp;4</a> a factor model with two levels is defined. The first level is ‘base’ level encompasses elementary units, and the second level is defined by variable school with <code>level: school</code>. The latent variable s.a as ‘school climate’ is defined that varies at the second level.</p>
+<p>In <a href="#exm-lev1">Example&nbsp;5</a> a factor model with two levels is defined. The first level is ‘base’ level encompasses elementary units, and the second level is defined by variable school with <code>level: school</code>. The latent variable s.a as ‘school climate’ is defined that varies at the second level.</p>
 <p>The next model, defines three factor models in a three level model.</p>
 <div id="exm-lev2" class="theorem example">
-<p><span class="theorem-title"><strong>Example 5 (Factor model with three levels) </strong></span></p>
+<p><span class="theorem-title"><strong>Example 6 (Factor model with three levels) </strong></span></p>
 <pre><code>level: school
 level: class within school
 
@@ -193,11 +192,11 @@ c.p     varies at level class
 s.a     =~ a1 + ... + a5
 s.p,c.p =~ p1 + ... + p5</code></pre>
 </div>
-<p>In <a href="#exm-lev2">Example&nbsp;5</a> the second level is class nested within school as the third level. Both 2<sup>nd</sup> and 3<sup>rd</sup> level and their nested structure is understood in the second line, and hence the first line is redundant. The model will remain unchanged if you omit the first line.</p>
+<p>In <a href="#exm-lev2">Example&nbsp;6</a> the second level is class nested within school as the third level. Both 2<sup>nd</sup> and 3<sup>rd</sup> level and their nested structure is understood in the second line, and hence the first line is redundant. The model will remain unchanged if you omit the first line.</p>
 <p>For models with higher number of levels, you can use multiple <code>within</code> keyword in a single <code>level:</code> command to specify the nested structure of the levels.</p>
 <p>Combining random effects in SEM make the models more flexible and easy to write and interpret in some scenarios. To see an example, we will rewrite an equivalent form of the variance-component factor model in <a href="#exm-exam1">Example&nbsp;3</a> in terms of a two-level factor model. That is to define two latent variables with the same factor model, one varies at the base level and the other one varies at the level class named ‘class climate’, with a constraint that factor loadings are equal in both factor models.</p>
 <div id="exm-exam2" class="theorem example">
-<p><span class="theorem-title"><strong>Example 6 (Variance-component factor model-hard syntax) </strong></span></p>
+<p><span class="theorem-title"><strong>Example 7 (Variance-component factor model-hard syntax) </strong></span></p>
 <pre><code>model&lt;-'level: class
         at as attitude
         c.c as class climate
@@ -209,7 +208,7 @@ s.p,c.p =~ p1 + ... + p5</code></pre>
         
         lambda1==1'</code></pre>
 </div>
-<p>In <a href="#exm-exam2">Example&nbsp;6</a> a level is defined and a latent variable ‘c.c’ as ‘class climate’ which varies at this level. Two latent factors ‘attitude’ and ‘class climate’ are defined with a constraint that factor loadings are equal in both factor model, while attitude varies at the ‘base’ level and ‘class climate’ varies at level ‘class’. The two factor models could also be combined into a single line as</p>
+<p>In <a href="#exm-exam2">Example&nbsp;7</a> a level is defined and a latent variable ‘c.c’ as ‘class climate’ which varies at this level. Two latent factors ‘attitude’ and ‘class climate’ are defined with a constraint that factor loadings are equal in both factor model, while attitude varies at the ‘base’ level and ‘class climate’ varies at level ‘class’. The two factor models could also be combined into a single line as</p>
 <pre><code>        c.c,at=~lambda1*a1 + ... + lambda5*a5</code></pre>
 <div class="callout-note callout callout-style-default callout-captioned">
 <div class="callout-header d-flex align-content-center">
@@ -254,7 +253,7 @@ Order of lines:
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p>The order of lines in <em>gmlSEM</em> syntax does not matter. So <a href="#exm-exam2">Example&nbsp;6</a> can also be reordered to get easier to read as</p>
+<p>The order of lines in <em>gmlSEM</em> syntax does not matter. So <a href="#exm-exam2">Example&nbsp;7</a> can also be reordered to get easier to read as</p>
 <pre><code>model&lt;-'level: class
 
         at as attitude
@@ -289,18 +288,18 @@ Identifiability of models:
 <p>In <em>gmlSEM</em> you can define the distribution of endogenous observe or latent variables in a <code>family:</code> command. In the following example we define a factor model with zero-inflated beta distribution for indicators. You can use many other distributions in <em>gmlSEM</em>. See <code>?gmlSEM::family</code> to learn more about different distributions that is provided in the package. You can also define your own distribution to use in <em>gmlSEM</em>.</p>
 <p>In the following two examples you can see how we can use the family: block to fit a probit regression model and a factor model with zero-inflated beta indicators:</p>
 <div id="exm-fam5" class="theorem example">
-<p><span class="theorem-title"><strong>Example 7 (A probit regression model) </strong></span></p>
+<p><span class="theorem-title"><strong>Example 8 (A probit regression model) </strong></span></p>
 <pre><code>model&lt;-'family: y binomial(link="probit")
         y = x1 + x2'</code></pre>
 </div>
 <div id="exm-fam1" class="theorem example">
-<p><span class="theorem-title"><strong>Example 8 (Factor model with zero-inflated beta indicators) </strong></span></p>
+<p><span class="theorem-title"><strong>Example 9 (Factor model with zero-inflated beta indicators) </strong></span></p>
 <pre><code>model&lt;-'family: y1, y2, ..., y5 zoib(link=c("probit","logit"),type="[0,1]")
           eta =~ y1 + ... + y5'</code></pre>
 </div>
 <p>When defining the family of distribution for a set of variables, you can also take advantage of copula functions to induce the conditional dependency between endogenous observed or latent variables:</p>
 <div id="exm-fam2" class="theorem example">
-<p><span class="theorem-title"><strong>Example 9 (Using copula to induce conditional dependency in factor models) </strong></span></p>
+<p><span class="theorem-title"><strong>Example 10 (Using copula to induce conditional dependency in factor models) </strong></span></p>
 <pre><code>model1&lt;-'family: y1, y2, ..., y5  binomial(link="probit") copula(type="gaussian")
           eta =~ y1 + ... + y5'
           
@@ -311,7 +310,7 @@ model2&lt;-'family:
 </div>
 <p>Introducing a copula term in the <code>family:</code> command lead to multivariate conditional dependency between the variables in that command provided that they varying at the same level. If the variables vary at different levels, a warning is produced and each set of variables varying at the same level will consider to be conditionally dependent using the introduced copula. For example in the following model, the set of <code>y1,...,y5</code> are conditionally dependent according to the Gaussian copula at level class, and <code>y6,...,y10</code> are conditionally dependent according to the Gaussian copula at level school.</p>
 <div id="exm-fam3" class="theorem example">
-<p><span class="theorem-title"><strong>Example 10 (Using copula to induce conditional dependency in a multi-level factor model) </strong></span></p>
+<p><span class="theorem-title"><strong>Example 11 (Using copula to induce conditional dependency in a multi-level factor model) </strong></span></p>
 <pre><code>model&lt;-'level:  class within school
          y1, ..., y5  vary at level class
          y6, ...,y10 vary at level school
@@ -321,7 +320,7 @@ model2&lt;-'family:
          eta1 =~ y1 + ... + y5
          eta2 =~ y6 + ... + y10'</code></pre>
 </div>
-<p>In the <a href="#exm-fam3">Example&nbsp;10</a>, <em>eta1</em> is a latent variable vary at level <em>class</em>, and <em>eta2</em> is a latent variable vary at level <em>school</em>. Adding a <code>family:</code> command with copula for defining the family of distribution for these two variable producing a warning and gmlSEM simply ignore the copula structure:</p>
+<p>In the <a href="#exm-fam3">Example&nbsp;11</a>, <em>eta1</em> is a latent variable vary at level <em>class</em>, and <em>eta2</em> is a latent variable vary at level <em>school</em>. Adding a <code>family:</code> command with copula for defining the family of distribution for these two variable producing a warning and gmlSEM simply ignore the copula structure:</p>
 <div>
 <pre><code>model&lt;-'level: class within school
          y1, ..., y5  vary between classes
@@ -335,7 +334,7 @@ model2&lt;-'family:
 </div>
 <p>You can also use copula functions to induce conditional dependency between different family of distributions by introducing the copula in a separate <code>family:</code> command as follow:</p>
 <div id="exm-fam4" class="theorem example">
-<p><span class="theorem-title"><strong>Example 11 (Conditional dependency between variables with different distributions:) </strong></span></p>
+<p><span class="theorem-title"><strong>Example 12 (Conditional dependency between variables with different distributions:) </strong></span></p>
 <pre><code>model&lt;-'family: y1, ..., y5  binomial(link="probit")
         family: y6, ..., y10 beta(link="logit")
         family: y1, ..., y10 copula(type="gaussian")
@@ -367,6 +366,7 @@ Note
 </div>
 </div>
 
+</section>
 </section>
 
 <div id="quarto-appendix" class="default"><section class="quarto-appendix-contents" role="doc-bibliography"><h2 class="anchored quarto-appendix-heading">References</h2><div id="refs" class="references csl-bib-body hanging-indent" role="doc-bibliography">

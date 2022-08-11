@@ -98,8 +98,7 @@ In the previous example we use the suffix operator `[as .]` to assign the name '
 
 As in *lavaan*, in measurement and regression models you can assign parameter labels to the parameters of the model using pre-multiplication mechanism (using `*` operator). In a regression model, pre-multiplication mechanism assign parameter labels to either regression coefficient or random term's standard deviation, depending it is a fixed term or random term. Thus in the following example `beta` refers to the regression coefficient of the fixed term `x`, and `c.t.std` refers to the standard deviation of the random intercept term in the model.
 
-<div>
-
+::: {#exm-exam02}
 ## Variance-component factor model
 
     library(gmlSEM)
@@ -110,8 +109,7 @@ As in *lavaan*, in measurement and regression models you can assign parameter la
             at = 0 + beta * x + (c.t.std * 1[as c.t]|class)'
               
     gmlSEM<-gmlSEM(model,AttitudeData)
-
-</div>
+:::
 
 ### Level
 
