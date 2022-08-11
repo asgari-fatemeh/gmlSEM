@@ -96,10 +96,9 @@ You can use assigned names to the random terms to use it as a response or covari
 
 In the previous example we use the suffix operator `[as .]` to assign the name 'c.t' to the random intercept. If you do not assign name to the random terms, *gmlSEM* automatically assign names to the random terms by convention with the template *response.level.covariate*. For example in `at = 0 + (1 + x |class)`, the *gmlSEM* assign names `at.class.1` and `at.class.x` by convention to the random intercept and random slop terms, respectively.
 
-As in *lavaan*, in measurement and regression models you can assign parameter labels to the parameters of the model using pre-multiplication mechanism (using `*` operator). In a regression model, pre-multiplication mechanism assign parameter labels to either regression coefficient or random term's standard deviation, depending it is a fixed term or random term. Thus in the following example `beta` refers to the regression coefficient of the fixed term `x`, and `c.t.std` refers to the standard deviation of the random intercept term in the model.
+As in *lavaan*, in measurement and regression models you can assign labels to the parameters of the model using pre-multiplication mechanism (using `*` operator). In a regression model, pre-multiplication mechanism assign parameter labels to either regression coefficient or random term's standard deviation, depending it is a fixed term or random term. Thus in the following model `beta` refers to the regression coefficient of the fixed term `x`, and `c.t.std` refers to the standard deviation of the random intercept term in the model.
 
-::: {#exm-exam02}
-## Variance-component factor model
+<div>
 
     library(gmlSEM)
 
@@ -109,7 +108,8 @@ As in *lavaan*, in measurement and regression models you can assign parameter la
             at = 0 + beta * x + (c.t.std * 1[as c.t]|class)'
               
     gmlSEM<-gmlSEM(model,AttitudeData)
-:::
+
+</div>
 
 ### Level
 
