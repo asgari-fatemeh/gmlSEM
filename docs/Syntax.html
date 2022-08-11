@@ -144,19 +144,19 @@ Intercept in regression models
 model&lt;-'at as attitude
         
         at =~ a1 + ... + a5
-        at = 0 + (1[as c.t]|class)'
+        at = 0 + (1[as c.c]|class)'
           
 gmlSEM&lt;-gmlSEM(model,AttitudeData)</code></pre>
 </div>
-<p>In the previous example we use the suffix operator <code>[as .]</code> to assign the name ‘c.t’ to the random intercept. If you do not assign name to the random terms, <em>gmlSEM</em> automatically assign names to the random terms by convention with the template <em>response.level.covariate</em>. For example in <code>at = 0 + (1 + x |class)</code>, the <em>gmlSEM</em> assign names <code>at.class.1</code> and <code>at.class.x</code> by convention to the random intercept and random slop terms, respectively.</p>
-<p>As in <em>lavaan</em>, in measurement and regression models you can assign labels to the parameters of the model using pre-multiplication mechanism (using <code>*</code> operator). In a regression model, pre-multiplication mechanism assign parameter labels to either regression coefficient or random term’s standard deviation, depending it is a fixed term or random term. Thus in the following model <code>beta</code> refers to the regression coefficient of the fixed term <code>x</code>, and <code>c.t.std</code> refers to the standard deviation of the random intercept term in the model.</p>
+<p>In the previous example we use the suffix operator <code>[as .]</code> to assign the name ‘<em>c.c</em>’ to the random intercept (the random intercept int this model can be interpreted as ‘class climate’). If you do not assign name to the random terms, <em>gmlSEM</em> automatically assign names to the random terms by convention with the template <em>response.level.covariate</em>. For example in <code>at = 0 + (1 + x |class)</code>, the <em>gmlSEM</em> assign names <code>at.class.1</code> and <code>at.class.x</code> by convention to the random intercept and random slop terms, respectively.</p>
+<p>As in <em>lavaan</em>, in measurement and regression models you can assign labels to the parameters of the model using pre-multiplication mechanism (using <code>*</code> operator). In a regression model, pre-multiplication mechanism assign parameter labels to either regression coefficient or random term’s standard deviation, depending it is a fixed term or random term. Thus in the following model <code>beta</code> refers to the regression coefficient of the fixed term <code>x</code>, and <code>c.c.std</code> refers to the standard deviation of the random intercept term in the model.</p>
 <div>
 <pre><code>library(gmlSEM)
 
 model&lt;-'at as attitude
           
         at =~ a1 + ... + a5
-        at = 0 + beta * x + (c.t.std * 1[as c.t]|class)'
+        at = 0 + beta * x + (c.c.std * 1[as c.c]|class)'
           
 gmlSEM&lt;-gmlSEM(model,AttitudeData)</code></pre>
 </div>

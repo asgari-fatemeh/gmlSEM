@@ -89,14 +89,14 @@ You can use assigned names to the random terms to use it as a response or covari
     model<-'at as attitude
             
             at =~ a1 + ... + a5
-            at = 0 + (1[as c.t]|class)'
+            at = 0 + (1[as c.c]|class)'
               
     gmlSEM<-gmlSEM(model,AttitudeData)
 :::
 
-In the previous example we use the suffix operator `[as .]` to assign the name 'c.t' to the random intercept. If you do not assign name to the random terms, *gmlSEM* automatically assign names to the random terms by convention with the template *response.level.covariate*. For example in `at = 0 + (1 + x |class)`, the *gmlSEM* assign names `at.class.1` and `at.class.x` by convention to the random intercept and random slop terms, respectively.
+In the previous example we use the suffix operator `[as .]` to assign the name '*c.c*' to the random intercept (the random intercept int this model can be interpreted as 'class climate'). If you do not assign name to the random terms, *gmlSEM* automatically assign names to the random terms by convention with the template *response.level.covariate*. For example in `at = 0 + (1 + x |class)`, the *gmlSEM* assign names `at.class.1` and `at.class.x` by convention to the random intercept and random slop terms, respectively.
 
-As in *lavaan*, in measurement and regression models you can assign labels to the parameters of the model using pre-multiplication mechanism (using `*` operator). In a regression model, pre-multiplication mechanism assign parameter labels to either regression coefficient or random term's standard deviation, depending it is a fixed term or random term. Thus in the following model `beta` refers to the regression coefficient of the fixed term `x`, and `c.t.std` refers to the standard deviation of the random intercept term in the model.
+As in *lavaan*, in measurement and regression models you can assign labels to the parameters of the model using pre-multiplication mechanism (using `*` operator). In a regression model, pre-multiplication mechanism assign parameter labels to either regression coefficient or random term's standard deviation, depending it is a fixed term or random term. Thus in the following model `beta` refers to the regression coefficient of the fixed term `x`, and `c.c.std` refers to the standard deviation of the random intercept term in the model.
 
 <div>
 
@@ -105,7 +105,7 @@ As in *lavaan*, in measurement and regression models you can assign labels to th
     model<-'at as attitude
               
             at =~ a1 + ... + a5
-            at = 0 + beta * x + (c.t.std * 1[as c.t]|class)'
+            at = 0 + beta * x + (c.c.std * 1[as c.c]|class)'
               
     gmlSEM<-gmlSEM(model,AttitudeData)
 
