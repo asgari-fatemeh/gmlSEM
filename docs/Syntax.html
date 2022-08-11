@@ -104,8 +104,8 @@ div.csl-indent {
 <p>Aliases are convenient for defining short and long version of variable and parameter names to have a concise code and clear outputs. It happens that you want to use the short version of a variable or parameter to have a more concise code, and you want to print the full name in the outputs. To do this you can define variable aliases with keyword <code>as</code> like</p>
 <pre><code>dp as depression</code></pre>
 <p>Consequently you can use <em>dp</em> and <em>depression</em> interchangeably in the code, while by convenient the right hand side of <code>as</code> keyword is displayed in the outputs. You can use aliases for any latent or observed variable or any parameter you define in the model. You can merge aliases in to a single line to define aliases for a set of variables or parameters at once, proviso that the length of sequence on the left and right side are the same, some examples are</p>
-<pre><code>p1, p2, p3  as MathScore, PhysicsScore, ChemistryScore
-a1, ..., a9 as StudentAttitude1, ..., StudentAttitude9</code></pre>
+<pre><code>p1,p2,p3   as MathScore,PhysicsScore,ChemistryScore
+a1,..., a9 as StudentAttitude1,...,StudentAttitude9</code></pre>
 <p>When defining aliases you are free to use any character including space on the right hand side of <code>as</code> keyword, however if you use special characters or strings such space, <code>,</code>, <code>+</code> or <code>=~</code> then you can not use the alias on the right hand side in the family, regression or measurement blocks. Variable and parameter aliases can also be defined in the <code>gmlSEM</code> function by passing an <em>alias</em> argument to the function:</p>
 <pre><code>gmlSEM&lt;-gmlSEM(..., alias=c("p"="depression"))</code></pre>
 </section>
@@ -307,19 +307,19 @@ Identifiability of models
 <div id="exm-fam3" class="theorem example">
 <p><span class="theorem-title"><strong>Example 10 (Using copula to induce conditional dependency in a multi-level factor model) </strong></span></p>
 <pre><code>model&lt;-'level:  class within school
-        y1, ..., y5  vary at level class
-        y6, ...,y10 vary at level school
+        y1, ..., y5   vary at level class
+        y6, ..., y10  vary at level school
          
         family: y1, y2, ..., y10 binomial(link="probit") copula(type="gaussian")
          
         eta1 =~ y1 + ... + y5
         eta2 =~ y6 + ... + y10'</code></pre>
 </div>
-<p>In the <a href="#exm-fam3">Example&nbsp;10</a>, <em>eta1</em> is a latent variable vary at level <em>class</em>, and <em>eta2</em> is a latent variable vary at level <em>school</em>. Adding a <code>family:</code> command with copula for defining the family of distribution for these two variable producing a warning and gmlSEM simply ignore the copula structure:</p>
+<p>In the <a href="#exm-fam3">Example&nbsp;10</a>, <em>eta1</em> is a latent variable vary at level <em>class</em>, and <em>eta2</em> is a latent variable vary at level <em>school</em>. Adding a <code>family:</code> command with copula for defining the family of distribution for these two variable producing a warning and <em>gmlSEM</em> simply ignore the copula structure:</p>
 <div>
 <pre><code>model&lt;-'level: class within school
-        y1, ..., y5  vary between classes
-        y6, ..., y10 vary between schools
+        y1, ..., y5  vary at level class
+        y6, ..., y10 vary at level school
          
         family: y1, y2, ..., y10 binomial(link="probit") copula(type="gaussian")
         family: eta1, eta2 gamma() copula(type="gaussian")

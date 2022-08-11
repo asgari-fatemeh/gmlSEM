@@ -260,8 +260,8 @@ Introducing a copula term in the `family:` command lead to multivariate conditio
 ## Using copula to induce conditional dependency in a multi-level factor model
 
     model<-'level:  class within school
-            y1, ..., y5  vary at level class
-            y6, ...,y10  vary at level school
+            y1, ..., y5   vary at level class
+            y6, ..., y10  vary at level school
              
             family: y1, y2, ..., y10 binomial(link="probit") copula(type="gaussian")
              
