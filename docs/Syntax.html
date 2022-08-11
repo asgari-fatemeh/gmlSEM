@@ -221,8 +221,9 @@ Specifying the levels at which variables vary
 <div class="callout-body-container callout-body">
 <p>It is a good practice to use <code>vary at level</code> phrase and explicitly list all <em>latent variables and observed response variables</em> that vary at the second level or higher, though it is not always necessary. If the level at which an observed response variable or a latent variable varies is not specified in the model, <em>gmlSEM</em> will infer it from data and model.</p>
 <p>Concerning the observed response variables, <em>gmlSEM</em> will scan the variable and will identify the level at which the given variable varies, and concerning the latent variables, <em>gmlSEM</em> infers the level from the measurement models. If the level is not specified for a latent variable, <em>gmlSEM</em> will produce a warning and will consider the lowest level at which all the indicator variables vary at that level or a lower sublevel. You can see a report from the multi-level structure of the model by <code>levels(model)</code>. See <code>?gmlSEM::levels</code> to learn more.</p>
-<p>There is no need to list the variables vary at the ‘<em>base</em>’ level, however you can do it by</p>
+<p>There is no need to list the observed response variables vary at the ‘<em>base</em>’ level, however you can do it by</p>
 <pre><code>y varies at level 1</code></pre>
+<p><del>On the other hand we recommend that you list all of the latent variables (endogenous or exogenous) and specify the level at which they vary, even those who varies at the first level. This make the model clear to read for other users, and prevent <em>glmSEM</em> to infer about the corresponding levels of latent variables which are not listed.</del></p>
 </div>
 </div>
 <div class="callout-important callout callout-style-default callout-captioned">

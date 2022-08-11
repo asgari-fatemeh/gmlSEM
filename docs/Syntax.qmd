@@ -181,9 +181,11 @@ It is a good practice to use `vary at level` phrase and explicitly list all *lat
 
 Concerning the observed response variables, *gmlSEM* will scan the variable and will identify the level at which the given variable varies, and concerning the latent variables, *gmlSEM* infers the level from the measurement models. If the level is not specified for a latent variable, *gmlSEM* will produce a warning and will consider the lowest level at which all the indicator variables vary at that level or a lower sublevel. You can see a report from the multi-level structure of the model by `levels(model)`. See `?gmlSEM::levels` to learn more.
 
-There is no need to list the variables vary at the '*base*' level, however you can do it by
+There is no need to list the observed response variables vary at the '*base*' level, however you can do it by
 
     y varies at level 1
+
+~~On the other hand we recommend that you list all of the latent variables (endogenous or exogenous) and specify the level at which they vary, even those who varies at the first level. This make the model clear to read for other users, and prevent *glmSEM* to infer about the corresponding levels of latent variables which are not listed.~~
 :::
 
 :::{.callout-important}
