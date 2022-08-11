@@ -105,13 +105,13 @@ div.csl-indent {
 <pre><code>dp as depression</code></pre>
 <p>Consequently you can use <em>dp</em> and <em>depression</em> interchangeably in the code, while by convenient the right hand side of <code>as</code> keyword is displayed in the outputs. You can use aliases for any latent or observed variable or any parameter you define in the model. You can merge aliases in to a single line to define aliases for a set of variables or parameters at once, proviso that the length of sequence on the left and right side are the same, some examples are</p>
 <pre><code>p1, p2, p3 as MathScore, PhysicsScore, ChemistryScore
-a1, ..., a9 as StudentAttitude1, ..., StudentAttitude9</code></pre>
+a1, ...,a9 as StudentAttitude1, ..., StudentAttitude9</code></pre>
 <p>When defining aliases you are free to use any character including space on the right hand side of <code>as</code> keyword, however if you use special characters or strings such space, <code>,</code>, <code>+</code> or <code>=~</code> then you can not use the alias on the right hand side in the family, regression or measurement blocks. Variable and parameter aliases can also be defined in the <code>gmlSEM</code> function by passing an <em>alias</em> argument to the function:</p>
 <pre><code>gmlSEM&lt;-gmlSEM(..., alias=c("p"="depression"))</code></pre>
 </section>
 <section id="random-terms" class="level3">
 <h3 class="anchored" data-anchor-id="random-terms">Random terms</h3>
-<p>In gmlSEM you can use random terms in the regression models, as you do it in <code>lme4::lmer</code>. In the following example we use a random intercept to define a variance component factor model for attitude in <code>gmlSEM::AttitudeData</code>.</p>
+<p>In <em>gmlSEM</em> you can use random terms in the regression models, as you do it in <code>lme4::lmer</code>. In the following example we use a random intercept to define a variance component factor model for attitude in <code>gmlSEM::AttitudeData</code>.</p>
 <div id="exm-exam01" class="theorem example">
 <p><span class="theorem-title"><strong>Example 2 (Variance-component factor model) </strong></span></p>
 <pre><code>library(gmlSEM)
@@ -136,7 +136,7 @@ Intercept in regression models
 <p>You can explicitly include or exclude intercept in the regression models by adding one of the values -1|0|1 to the model. By default, in <em>gmlSEM</em> the regression models in which the response is a latent variable does not have an intercept while a regression model in which the response is an observed variable includes an intercept. Thus the ‘0’ in the regression model in previous example is redundant and is considered by default in <em>gmlSEM</em>.</p>
 </div>
 </div>
-<p>You can use assigned names to the random terms to use it as a response or covariate term in other regression models. in <em>gmlSEM</em>, you can use the name specifier operator <code>[as .]</code> to name any random term in the regression model as in the following example. Consider that you can use name specifier operator <code>[as .]</code> only after random terms in the regression models.</p>
+<p>You can assign name to a random term, so then you can use it as a response or covariate term in other regression models. in <em>gmlSEM</em>, you can use the name specifier operator <code>[as .]</code> to assign name to a random term in the regression model as in the following example. Notice that you can use name specifier operator <code>[as .]</code> only after random terms in the regression models.</p>
 <div id="exm-exam1" class="theorem example">
 <p><span class="theorem-title"><strong>Example 3 (Variance-component factor model) </strong></span></p>
 <pre><code>library(gmlSEM)
@@ -148,7 +148,7 @@ model&lt;-'at as attitude
           
 gmlSEM&lt;-gmlSEM(model,AttitudeData)</code></pre>
 </div>
-<p>In the previous example we use the suffix operator <code>[as .]</code> to assign the name ‘<em>c.c</em>’ to the random intercept (the random intercept int this model can be interpreted as ‘class climate’). If you do not assign name to the random terms, <em>gmlSEM</em> automatically assign names to the random terms by convention with the template <em>response.level.covariate</em>. For example in <code>at = 0 + (1 + x |class)</code>, the <em>gmlSEM</em> assign names <code>at.class.1</code> and <code>at.class.x</code> by convention to the random intercept and random slop terms, respectively.</p>
+<p>In the previous example we use the name specifier operator <code>[as .]</code> to assign the name ‘<em>c.c</em>’ to the random intercept (the random intercept in this model can be interpreted as ‘class climate’). If you do not assign name to the random terms, <em>gmlSEM</em> automatically assign names to the random terms by convention with the template <em>response.level.covariate</em>. For example in <code>at = 0 + (1 + x |class)</code>, the <em>gmlSEM</em> assign names <code>at.class.1</code> and <code>at.class.x</code> by convention to the random intercept and random slop terms, respectively.</p>
 <p>As in <em>lavaan</em>, in measurement and regression models you can assign labels to the parameters of the model using pre-multiplication mechanism (using <code>*</code> operator). In a regression model, pre-multiplication mechanism assign parameter labels to either regression coefficient or random term’s standard deviation, depending it is a fixed term or random term. Thus in the following model <code>beta</code> refers to the regression coefficient of the fixed term <code>x</code>, and <code>c.c.std</code> refers to the standard deviation of the random intercept term in the model.</p>
 <div>
 <pre><code>library(gmlSEM)
