@@ -74,7 +74,7 @@ In gmlSEM you can use random terms in the regression models, as you do it in `lm
 :::
 
 ::: callout-note
-## Intercept in regression models:
+## Intercept in regression models
 
 You can explicitly include or exclude intercept in the regression models by adding one of the values -1\|0\|1 to the model. By default, in *gmlSEM* the regression models in which the response is a latent variable does not have an intercept while a regression model in which the response is an observed variable includes an intercept. Thus the '0' in the regression model in previous example is redundant and is considered by default in *gmlSEM*.
 :::
@@ -175,7 +175,7 @@ In @exm-exam2 a level is defined and a latent variable 'c.c' as 'class climate' 
             c.c,at=~lambda1*a1 + ... + lambda5*a5
 
 ::: callout-note
-## Specifying the levels at which variables vary:
+## Specifying the levels at which variables vary
 
 It is a good practice to use `vary at level` phrase and explicitly list all *latent variables and observed response variables* that vary at the second level or higher, though it is not always necessary. If the level at which an observed response variable or a latent variable varies is not specified in the model, *gmlSEM* will infer it from data and model.
 
@@ -197,9 +197,9 @@ In a Multi-Level model in *gmlSEM*, you have to note that
 :::
 
 ::: callout-note
-## Order of lines:
+## Order of lines
 
-The order of lines in *gmlSEM* syntax does not matter. So @exm-exam2 can also be reordered to get easier to read as
+The order of lines in *gmlSEM* syntax does not matter. So @exm-exam2 can rearranged for easy reading:
 
     model<-'level: class
 
@@ -214,7 +214,7 @@ The order of lines in *gmlSEM* syntax does not matter. So @exm-exam2 can also be
 :::
 
 ::: callout-note
-## Identifiability of models:
+## Identifiability of models
 
 In factor models you have to take care of identifiablity by putting a constraint on the factor loadings or the variance of latent variable. If you did not specify the necessary constraint, *gmlSEM* will set the first factor loading to one by default. You can ether set the variance to one by
 
@@ -288,7 +288,7 @@ In the @exm-fam3, *eta1* is a latent variable vary at level *class*, and *eta2* 
 You can also use copula functions to induce conditional dependency between different family of distributions by introducing the copula in a separate `family:` command as follow:
 
 ::: {#exm-fam4}
-## Conditional dependency between variables with different distributions:
+## Conditional dependency between variables with different distributions
 
     model<-'family: y1, ..., y5  binomial(link="probit")
             family: y6, ..., y10 beta(link="logit")

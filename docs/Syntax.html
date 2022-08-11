@@ -129,7 +129,7 @@ gmlSEM&lt;-gmlSEM(model,AttitudeData)</code></pre>
 <i class="callout-icon"></i>
 </div>
 <div class="callout-caption-container flex-fill">
-Intercept in regression models:
+Intercept in regression models
 </div>
 </div>
 <div class="callout-body-container callout-body">
@@ -216,7 +216,7 @@ s.p,c.p =~ p1 + ... + p5</code></pre>
 <i class="callout-icon"></i>
 </div>
 <div class="callout-caption-container flex-fill">
-Specifying the levels at which variables vary:
+Specifying the levels at which variables vary
 </div>
 </div>
 <div class="callout-body-container callout-body">
@@ -249,11 +249,11 @@ Important
 <i class="callout-icon"></i>
 </div>
 <div class="callout-caption-container flex-fill">
-Order of lines:
+Order of lines
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p>The order of lines in <em>gmlSEM</em> syntax does not matter. So <a href="#exm-exam2">Example&nbsp;7</a> can also be reordered to get easier to read as</p>
+<p>The order of lines in <em>gmlSEM</em> syntax does not matter. So <a href="#exm-exam2">Example&nbsp;7</a> can rearranged for easy reading:</p>
 <pre><code>model&lt;-'level: class
 
         at as attitude
@@ -272,7 +272,7 @@ Order of lines:
 <i class="callout-icon"></i>
 </div>
 <div class="callout-caption-container flex-fill">
-Identifiability of models:
+Identifiability of models
 </div>
 </div>
 <div class="callout-body-container callout-body">
@@ -329,7 +329,7 @@ Identifiability of models:
 </div>
 <p>You can also use copula functions to induce conditional dependency between different family of distributions by introducing the copula in a separate <code>family:</code> command as follow:</p>
 <div id="exm-fam4" class="theorem example">
-<p><span class="theorem-title"><strong>Example 12 (Conditional dependency between variables with different distributions:) </strong></span></p>
+<p><span class="theorem-title"><strong>Example 12 (Conditional dependency between variables with different distributions) </strong></span></p>
 <pre><code>model&lt;-'family: y1, ..., y5  binomial(link="probit")
         family: y6, ..., y10 beta(link="logit")
         family: y1, ..., y10 copula(type="gaussian")
