@@ -49,8 +49,8 @@ Aliases are convenient for defining short and long version of variable and param
 
 Consequently you can use *dp* and *depression* interchangeably in the code, while by convenient the right hand side of `as` keyword is displayed in the outputs. You can use aliases for any latent or observed variable or any parameter you define in the model. You can merge aliases in to a single line to define aliases for a set of variables or parameters at once, proviso that the length of sequence on the left and right side are the same, some examples are
 
-    p1, p2, p3  as MathScore, PhysicsScore, ChemistryScore
-    a1, ..., a9 as StudentAttitude1, ..., StudentAttitude9
+    p1,p2,p3   as MathScore,PhysicsScore,ChemistryScore
+    a1,..., a9 as StudentAttitude1,...,StudentAttitude9
 
 When defining aliases you are free to use any character including space on the right hand side of `as` keyword, however if you use special characters or strings such space, `,`, `+` or `=~` then you can not use the alias on the right hand side in the family, regression or measurement blocks. Variable and parameter aliases can also be defined in the `gmlSEM` function by passing an *alias* argument to the function:
 
@@ -188,14 +188,12 @@ There is no need to list the observed response variables vary at the '*base*' le
 ~~On the other hand we recommend that you list all of the latent variables (endogenous or exogenous) and specify the level at which they vary, even those who varies at the first level. This make the model clear to read for other users, and prevent *glmSEM* to infer about the corresponding levels of latent variables which are not listed.~~
 :::
 
-:::{.callout-important}
-
+::: callout-important
 In a Multi-Level model in *gmlSEM*, you have to note that
 
 -   In a regression model, the response variable must vary at the same level or a lower level than the covariates.
 
 -   In a measurement model, the latent variable must vary at the same level or a higher level than the indicators.
-
 :::
 
 ::: callout-note
@@ -263,7 +261,7 @@ Introducing a copula term in the `family:` command lead to multivariate conditio
 
     model<-'level:  class within school
             y1, ..., y5  vary at level class
-            y6, ...,y10 vary at level school
+            y6, ...,y10  vary at level school
              
             family: y1, y2, ..., y10 binomial(link="probit") copula(type="gaussian")
              
@@ -271,13 +269,13 @@ Introducing a copula term in the `family:` command lead to multivariate conditio
             eta2 =~ y6 + ... + y10'
 :::
 
-In the @exm-fam3, *eta1* is a latent variable vary at level *class*, and *eta2* is a latent variable vary at level *school*. Adding a `family:` command with copula for defining the family of distribution for these two variable producing a warning and gmlSEM simply ignore the copula structure:
+In the @exm-fam3, *eta1* is a latent variable vary at level *class*, and *eta2* is a latent variable vary at level *school*. Adding a `family:` command with copula for defining the family of distribution for these two variable producing a warning and *gmlSEM* simply ignore the copula structure:
 
 <div>
 
     model<-'level: class within school
-            y1, ..., y5  vary between classes
-            y6, ..., y10 vary between schools
+            y1, ..., y5  vary at level class
+            y6, ..., y10 vary at level school
              
             family: y1, y2, ..., y10 binomial(link="probit") copula(type="gaussian")
             family: eta1, eta2 gamma() copula(type="gaussian")
