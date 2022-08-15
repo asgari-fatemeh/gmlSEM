@@ -121,7 +121,7 @@ model&lt;-'at as attitude
         at =~ a1 + ... + a5
         at = 0 + (1|class)'
           
-gmlSEM&lt;-gmlSEM(model,AttitudeData)</code></pre>
+gmlsem&lt;-gmlSEM(model,AttitudeData)</code></pre>
 </div>
 <div class="callout-note callout callout-style-default callout-captioned">
 <div class="callout-header d-flex align-content-center">
@@ -154,13 +154,13 @@ model&lt;-'at  as Student Attitude
         at =~ a1 + ... + a5
         at = 0 + beta * x + (c.c.std * 1[as c.c]|class)'
 
-gmlSEM&lt;-gmlSEM(model,AttitudeData)</code></pre></td>
+gmlsem&lt;-gmlSEM(model,AttitudeData)</code></pre></td>
 <td><img src="img/exam1.svg" title="fig:" id="fig-exam1" class="img-fluid" style="width:100.0%" alt="Variance-component factor model for ‘Student Attitude’"></td>
 </tr>
 </tbody>
 </table>
 </div>
-<p>In the previous example, the name specifier operator <code>[as .]</code> is used to assign the name ‘c.c’ to the random intercept (the random intercept in this model can be interpreted as ‘class climate’). If you do not assign names to the random terms, <em>gmlSEM</em> automatically assigns names to the random terms by convention with the template <em>response.level.covariate</em>. For example in <code>at = 0 + (1 + x |class)</code>, the <em>gmlSEM</em> assign names <code>at.class.1</code> and <code>at.class.x</code> by convention to the random intercept and random slop terms, respectively.</p>
+<p>In the figure in <a href="#exm-exam1">Example&nbsp;3</a>, latent variables serving as residuals are not enclosed in circles. In th <em>gmlSEM</em> syntax in this example, the name specifier operator <code>[as .]</code> is used to assign the name ‘c.c’ to the random intercept (the random intercept in this model can be interpreted as ‘class climate’). If you do not assign names to the random terms, <em>gmlSEM</em> automatically assigns names to the random terms by convention with the template <em>response.level.covariate</em>. For example in <code>at = 0 + (1 + x |class)</code>, the <em>gmlSEM</em> assign names <code>at.class.1</code> and <code>at.class.x</code> by convention to the random intercept and random slop terms, respectively.</p>
 <p>Similar to <em>lavaan</em>, in the measurement and regression models, you can assign labels to the parameters of the model using pre-multiplication mechanism (using <code>*</code> operator). In a regression model, pre-multiplication mechanism assigns parameter labels to either regression coefficients or random terms’ standard deviation, depending it is a fixed term or random term. Thus, in the following model, <code>beta</code> refers to the regression coefficient of the fixed term <code>x</code>, and <code>c.c.std</code> refers to the standard deviation of the random intercept term in the model.</p>
 <pre><code>library(gmlSEM)
 
@@ -170,7 +170,7 @@ model&lt;-'at  as Student Attitude
         at =~ a1 + ... + a5
         at = 0 + beta * x + (c.c.std * 1[as c.c]|class)'
           
-gmlSEM&lt;-gmlSEM(model,AttitudeData)</code></pre>
+gmlsem&lt;-gmlSEM(model,AttitudeData)</code></pre>
 </section>
 <section id="level" class="level3">
 <h3 class="anchored" data-anchor-id="level">Level</h3>
@@ -194,34 +194,16 @@ model&lt;-' level: school
 
          s.c =~ a1 + ... + a5'
 
-gmlSEM&lt;-gmlSEM(model,AttitudeData)</code></pre></td>
+gmlsem&lt;-gmlSEM(model,AttitudeData)</code></pre></td>
 <td><img src="img/lev1.svg" class="img-fluid" style="width:100.0%"></td>
 </tr>
 </tbody>
 </table>
 </div>
 <p>In <a href="#exm-lev1">Example&nbsp;4</a> a factor model with two levels is defined. The first level is ‘base’ level encompasses elementary units, and the second level is defined by variable school with <code>level: school</code>, and the latent variable <em>s.c</em> as ‘school climate’ varies at the second level.</p>
-<p>The next model defines three measurement models for three latent variables in a three level model.</p>
-<div id="exm-lev2" class="theorem example">
-<p><span class="theorem-title"><strong>Example 5 (Factor model with three levels) </strong></span></p>
-<pre><code>level: school
-level: class within school
-
-s.c as School Climate
-s.p as School Performance
-c.p as Class Performance
-
-s.p,s.c vary at level school
-c.p     varies at level class
-
-s.c     =~ a1 + ... + a5
-s.p,c.p =~ p1 + ... + p5</code></pre>
-</div>
-<p>In <a href="#exm-lev2">Example&nbsp;5</a>, the second level is class nested within school as the third level. Both 2<sup>nd</sup> and 3<sup>rd</sup> levels and their nested structure are understood in the second line, and hence the first line is redundant. The model will remain unchanged if you omit the first line.</p>
-<p>For models with higher number of levels, you can use multiple <code>within</code> keyword in a single <code>level:</code> command to specify the nested structure of the levels.</p>
 <p>Combining random effects in SEM make the models more flexible and easy to write and interpret in some scenarios. To see an example, we will rewrite an equivalent form of the variance-component factor model in <a href="#exm-exam1">Example&nbsp;3</a> in terms of a two-level factor model. That is, to define two latent variables with the same factor model, one varies at the base level and the other one varies at the level class named ‘class climate’, with a constraint that factor loadings are equal in both factor models.</p>
 <div id="exm-exam2" class="theorem example">
-<p><span class="theorem-title"><strong>Example 6 (Variance-component factor model-hard syntax) </strong></span></p>
+<p><span class="theorem-title"><strong>Example 5 (Variance-component factor model-hard syntax) </strong></span></p>
 <table class="table">
 <colgroup>
 <col style="width: 59%">
@@ -241,14 +223,80 @@ model&lt;-'level: class
 
         lambda1==1'
 
-gmlSEM&lt;-gmlSEM(model,AttitudeData)</code></pre></td>
+gmlsem&lt;-gmlSEM(model,AttitudeData)</code></pre></td>
 <td><img src="img/exam2.svg" class="img-fluid" style="width:100.0%"></td>
 </tr>
 </tbody>
 </table>
 </div>
-<p>In <a href="#exm-exam2">Example&nbsp;6</a>, a level is defined and a latent variable ‘<em>c.c</em>’ as ‘class climate’ which varies at this level. Two latent factors ‘attitude’ and ‘class climate’ are defined with a constraint that factor loadings are equal in both factor model, while attitude varies at the level ‘base’ and ‘class climate’ varies at the level ‘class’. The two factor models could also be combined into a single line as</p>
+<p>In <a href="#exm-exam2">Example&nbsp;5</a>, a level is defined and a latent variable ‘<em>c.c</em>’ as ‘class climate’ which varies at this level. Two latent factors ‘attitude’ and ‘class climate’ are defined with a constraint that factor loadings are equal in both factor model, while attitude varies at the level ‘base’ and ‘class climate’ varies at the level ‘class’. The two factor models could also be combined into a single line as:</p>
 <pre><code>        c.c,at =~ lambda1*a1 + ... + lambda5*a5</code></pre>
+<p>The model depicted at <a href="#fig-3-level-1">Figure&nbsp;1</a> demonstrates a three-level SEM model with two measurement models defined at the first level. Two latent variables ‘Class Climate’ and ‘School Climate’ can be understood either as random intercepts at regression model for ‘Student Attitude’ or modeled by factorial models with the same structure as ‘Student Attitude’ with equality constraints for factor loadings as in <a href="#exm-exam2">Example&nbsp;5</a>.</p>
+<div id="fig-3-level-1" class="quarto-figure quarto-figure-center anchored">
+<figure class="figure">
+<p><img src="img/multi-level1.svg" class="img-fluid figure-img" alt="Three-level SEM for student performace" style="width:15cm"></p>
+<p></p><figcaption class="figure-caption">Figure 1: Three-level SEM for ‘Student Performace’</figcaption><p></p>
+</figure>
+</div>
+<div id="exm-lev2" class="theorem example">
+<p><span class="theorem-title"><strong>Example 6 (Three-level SEM) </strong></span>The <em>gmlSEM</em> syntax for the model depicated at <a href="#fig-3-level-1">Figure&nbsp;1</a> is:</p>
+<pre><code>librar(bmlSEM)
+
+model&lt;-'level: school
+        level: class within school
+        
+        at  as Student Attitude
+        s.c as School Climate
+        c.c as Class climate
+        p   as Student Performance
+
+        c.c     varies at level class
+        s.c     varies at level school
+
+        p =~ p1 + p2 + p3
+        a =~ a1 + ... + a5
+        
+        a   ~ (1[as c.c]|class)
+        c.c ~ (1[as s.c]|school)
+        p   ~ a + c.c + s.c'
+        
+gmlsem&lt;-gmlSEM(model,AttitudeData)</code></pre>
+</div>
+<p>In <a href="#exm-lev2">Example&nbsp;6</a>, the second level is class nested within school as the third level. Both 2<sup>nd</sup> and 3<sup>rd</sup> levels and their nested structure are understood in the second line. Hence, the first line is redundant, and the model will remain unchanged if you omit the first line. For models with higher number of levels, you can use multiple <code>within</code> keyword in a single <code>level:</code> command to specify the nested structure of the levels.</p>
+<p>In <a href="#exm-lev2">Example&nbsp;6</a>, the ‘Student performance’ is modeled against the ‘Student Attitude’ and the ‘Class Climate’. In the next model we model ‘Student performance’ on ‘’Class Climate’ and the centered ‘Student Attitude’.</p>
+<div id="fig-3-level-2" class="quarto-figure quarto-figure-center anchored">
+<figure class="figure">
+<p><img src="img/multi-level2.svg" class="img-fluid figure-img" style="width:15cm"></p>
+<p></p><figcaption class="figure-caption">Figure 2: ‘Studet Attitude’ and deviation of ‘Student Attitute’ from the ‘Class Climate’ on ‘Student Performace’ in a three-level SEM</figcaption><p></p>
+</figure>
+</div>
+</section>
+</section>
+<section id="three-level-sem-1" class="level2">
+<h2 class="anchored" data-anchor-id="three-level-sem-1">Three-level SEM</h2>
+<p>The <em>gmlSEM</em> syntax for the model depicated at <a href="#fig-3-level-2">Figure&nbsp;2</a> is:</p>
+<pre><code>librar(bmlSEM)
+
+model&lt;-'level: school
+        level: class within school
+        
+        at  as Student Attitude
+        c.c as Class climate
+        s.c as School Climate
+        p   as Student Performance
+
+        c.c     varies at level class
+        s.c     varies at level school
+
+        p =~ p1 + p2 + p3
+        a =~ a1 + ... + a5
+        
+        a   ~ (1[as c.c]|class)
+        c.c ~ (1[as s.c]|school)
+        p   ~ c.c + beta * a - beta * c.c + s.c'
+        
+gmlsem&lt;-gmlSEM(model,AttitudeData)</code></pre>
+</section>
 <div class="callout-important callout callout-style-default callout-captioned">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
@@ -278,7 +326,7 @@ Order of lines
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p>The order of lines in <em>gmlSEM</em> syntax does not matter. So <a href="#exm-exam2">Example&nbsp;6</a> can rearranged for easy reading:</p>
+<p>The order of lines in <em>gmlSEM</em> syntax does not matter. So <a href="#exm-exam2">Example&nbsp;5</a> can rearranged for easy reading:</p>
 <pre><code>model&lt;-'level: class
 
         at as attitude
@@ -307,7 +355,6 @@ Identifiability of models
 <pre><code>at =~ a1 + 1*a2 + a3 + a4 + a5</code></pre>
 </div>
 </div>
-</section>
 <section id="family" class="level3">
 <h3 class="anchored" data-anchor-id="family">Family</h3>
 <p>In <em>gmlSEM</em>, you can define the distribution of endogenous observed or latent variables in a <code>family:</code> command. In the following example, we define a factor model with zero-inflated beta distribution for indicators. You can use many other distributions in <em>gmlSEM</em>. See <code>?gmlSEM::family</code> to learn more about different distributions that is provided in the package. You can also define your own distribution to use in <em>gmlSEM</em>.</p>
@@ -386,7 +433,6 @@ Note
 </div>
 </div>
 
-</section>
 </section>
 
 <div id="quarto-appendix" class="default"><section class="quarto-appendix-contents" role="doc-bibliography"><h2 class="anchored quarto-appendix-heading">References</h2><div id="refs" class="references csl-bib-body hanging-indent" role="doc-bibliography">
