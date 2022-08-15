@@ -84,32 +84,32 @@ You can assign name to a random term, so then you can use it as a response or co
 ::: {#exm-exam1}
 ## Variance-component factor model
 
-    library(gmlSEM)
-
-    model<-'at as attitude
-            
-            at =~ a1 + ... + a5
-            at = 0 + (1[as c.c]|class)'
-              
-    gmlSEM<-gmlSEM(model,AttitudeData)
++--------------------------------------------------------------+---------------------------------------------------------------------------------------------------+
+|     library(gmlSEM)                                          | ![Variance-component factor model for 'Student Attitude'](img/exam1.svg){#fig-exam1 width="100%"} |
+|                                                              |                                                                                                   |
+|     model<-'at  as Student Attitude                          |                                                                                                   |
+|             c.c as Class Climate                             |                                                                                                   |
+|                                                              |                                                                                                   |
+|             at =~ a1 + ... + a5                              |                                                                                                   |
+|             at = 0 + beta * x + (c.c.std * 1[as c.c]|class)' |                                                                                                   |
+|                                                              |                                                                                                   |
+|     gmlSEM<-gmlSEM(model,AttitudeData)                       |                                                                                                   |
++--------------------------------------------------------------+---------------------------------------------------------------------------------------------------+
 :::
 
 In the previous example, the name specifier operator `[as .]` is used to assign the name 'c.c' to the random intercept (the random intercept in this model can be interpreted as 'class climate'). If you do not assign names to the random terms, *gmlSEM* automatically assigns names to the random terms by convention with the template *response.level.covariate*. For example in `at = 0 + (1 + x |class)`, the *gmlSEM* assign names `at.class.1` and `at.class.x` by convention to the random intercept and random slop terms, respectively.
 
 Similar to *lavaan*, in the measurement and regression models, you can assign labels to the parameters of the model using pre-multiplication mechanism (using `*` operator). In a regression model, pre-multiplication mechanism assigns parameter labels to either regression coefficients or random terms' standard deviation, depending it is a fixed term or random term. Thus, in the following model, `beta` refers to the regression coefficient of the fixed term `x`, and `c.c.std` refers to the standard deviation of the random intercept term in the model.
 
-<div>
-
     library(gmlSEM)
 
-    model<-'at as attitude
+    model<-'at  as Student Attitude
+            c.c as Class Climate
               
             at =~ a1 + ... + a5
             at = 0 + beta * x + (c.c.std * 1[as c.c]|class)'
               
     gmlSEM<-gmlSEM(model,AttitudeData)
-
-</div>
 
 ### Level
 
@@ -120,12 +120,18 @@ Consider the simulated dataset `gmlSEM::AttitudeData`. Students' attitudes are r
 ::: {#exm-lev1}
 ## Factor model with two levels
 
-    level: school
-    s.c as school climate
-
-    s.c varies at level school
-
-    s.c =~ a1 + ... + a5
++-----------------------------------------+---------------------------------+
+|     library(gmlSEM)                     | ![](img/lev1.svg){width="100%"} |
+|                                         |                                 |
+|     model<-' level: school              |                                 |
+|              s.c as school climate      |                                 |
+|                                         |                                 |
+|              s.c varies at level school |                                 |
+|                                         |                                 |
+|              s.c =~ a1 + ... + a5'      |                                 |
+|                                         |                                 |
+|     gmlSEM<-gmlSEM(model,AttitudeData)  |                                 |
++-----------------------------------------+---------------------------------+
 :::
 
 In @exm-lev1 a factor model with two levels is defined. The first level is 'base' level encompasses elementary units, and the second level is defined by variable school with `level: school`, and the latent variable *s.c* as 'school climate' varies at the second level.
@@ -138,9 +144,9 @@ The next model defines three measurement models for three latent variables in a 
     level: school
     level: class within school
 
-    s.c as school climate
-    s.p as school performance
-    c.p as class performance
+    s.c as School Climate
+    s.p as School Performance
+    c.p as Class Performance
 
     s.p,s.c vary at level school
     c.p     varies at level class
@@ -158,16 +164,21 @@ Combining random effects in SEM make the models more flexible and easy to write 
 ::: {#exm-exam2}
 ## Variance-component factor model-hard syntax
 
-    model<-'level: class
-            at  as attitude
-            c.c as class climate
-              
-            c.c varies at level class
-              
-            at  =~ lambda1*a1 + ... + lambda5*a5
-            c.c =~ lambda1*a1 + ... + lambda5*a5
-            
-            lambda1==1'
++--------------------------------------------------+----------------------------------+
+|     library(gmlSEM)                              | ![](img/exam2.svg){width="100%"} |
+|     model<-'level: class                         |                                  |
+|             at  as Student Attitude              |                                  |
+|             c.c as Class Climate                 |                                  |
+|                                                  |                                  |
+|             c.c varies at level class            |                                  |
+|                                                  |                                  |
+|             at  =~ lambda1*a1 + ... + lambda5*a5 |                                  |
+|             c.c =~ lambda1*a1 + ... + lambda5*a5 |                                  |
+|                                                  |                                  |
+|             lambda1==1'                          |                                  |
+|                                                  |                                  |
+|     gmlSEM<-gmlSEM(model,AttitudeData)           |                                  |
++--------------------------------------------------+----------------------------------+
 :::
 
 In @exm-exam2, a level is defined and a latent variable '*c.c*' as 'class climate' which varies at this level. Two latent factors 'attitude' and 'class climate' are defined with a constraint that factor loadings are equal in both factor model, while attitude varies at the level 'base' and 'class climate' varies at the level 'class'. The two factor models could also be combined into a single line as
