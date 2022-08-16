@@ -3,6 +3,7 @@ title: "gmlSEM"
 format: html
 editor: visual
 bibliography: refs.bib
+number-sections: true
 ---
 
 ## Genelaralized Multi-Level SEM in R
@@ -13,11 +14,11 @@ This project aims at developing Generalized Multi-Level SEM in R. The main motiv
 
 The extended syntax helps you to:
 
--   define levels (or clusters) in the data
+-   Define levels (or clusters) in the data
 
--   introduce (named) random terms in the model
+-   Introduce (named) random terms in the model
 
--   set the desired distributions for response models
+-   Set the desired distributions for response models
 
 ## Extended Syntax
 
@@ -196,23 +197,25 @@ The *gmlSEM* syntax for the model depicated at @fig-3-level-1 is:
 
 In @exm-lev2, the second level is class nested within school as the third level. Both 2^nd^ and 3^rd^ levels and their nested structure are understood in the second line. Hence, the first line is redundant, and the model will remain unchanged if you omit the first line. For models with higher number of levels, you can use multiple `within` keyword in a single `level:` command to specify the nested structure of the levels.
 
-In @exm-lev2, the 'Student performance' is modeled against the 'Student Attitude' and the 'Class Climate'. In the next model we model 'Student performance' on ''Class Climate' and the centered 'Student Attitude'.
+In @exm-lev2, the 'Student performance' is modeled against the 'Student Attitude' and the 'Class Climate'. In the next model we model 'Student performance' on ''Class Climate' and the centered version 'Student Attitude'.
 
 !['Studet Attitude' and deviation of 'Student Attitute' from the 'Class Climate' on 'Student Performace' in a three-level SEM](img/multi-level2.svg){#fig-3-level-2 width="15cm"}
 
-<div>
+In @fig-3-level-2, the scholar is interested to investigate the potential effect of between the 'Class Climate' on 'Student Performance', as well as the potential effect of 'Excess Energy of Student' (as deviation of 'Student Attitude' from 'Class Climate') on 'Student Performance'. In gmlSEM syntax, you can use `res(.)` to access the deviation of a variable from its conditional expected mean. You can use the residual term as a fixed term in a regression model, or use it as a response to describe heteroskedasticity if the family distribution has a scale parameter.
 
+In the next example you can see how to write the *gmlSEM* syntax for @fig-3-level-2 and use the residual term of 'Student Attitude' as a covariate in the regression model of 'Student Performance'.
+
+::: {#exm-exam4}
 ## Three-level SEM
 
 The *gmlSEM* syntax for the model depicated at @fig-3-level-2 is:
 
     librar(gmlSEM)
 
-    model<-'level: school
-            level: class within school
+    model<-'level: class within school
             
             at  as Student Attitude
-            c.c as Class climate
+            c.c as Class Climate
             s.c as School Climate
             p   as Student Performance
 
@@ -224,11 +227,10 @@ The *gmlSEM* syntax for the model depicated at @fig-3-level-2 is:
             
             a   ~ (1[as c.c]|class)
             c.c ~ (1[as s.c]|school)
-            p   ~ c.c + beta * a - beta * c.c + s.c'
+            p   ~ beta * res(a) + c.c + s.c'
             
     gmlsem<-gmlSEM(model,AttitudeData)
-
-</div>
+:::
 
 ::: callout-important
 ## Specifying the levels at which variables vary
@@ -252,7 +254,7 @@ The order of lines in *gmlSEM* syntax does not matter. So @exm-exam2 can rearran
     model<-'level: class
 
             at as attitude
-            at  =~ lambda1*a1 + ... + lambda5*a5
+            at  =~ a1 + ... + a5
             
             c.c as class climate
             c.c varies at level class
@@ -292,6 +294,52 @@ In the following two examples you can see how we can use the family: block to fi
     model<-'family: y1, y2, ..., y5 zoib(link=c("probit","logit"),type="[0,1]")
             eta =~ y1 + ... + y5'
 :::
+
+#### Heteroskedasticity
+
+If the chosen family distribution for an observed response variable or a latent variable encompasses a scale parameter, you can write a regression model in a `heter:` block to explain heteroskedasticity. In the next two examples we have defined an SEM in which the latent variable 'Student Performance' has a non-homogenous variance in different classes. In the first example the latent variable 'Student Performance' is a Gaussian variable which its variance is explained through a regression model over class using a default `log` link function. In the second example the latent variable is assumed to have gamma distribution. If the chosen family does not have a scale parameter the gmlSEM will stop by raising an error. You can use different link functions for the mean and scale parameters in the regression blocks using `link` (or `link.mean`) and `link.scale` arguments. If you have no idea about the appropriate link functions you can ignore passing any argument into family distribution and rely on the default link functions. For the Gaussian and Gamma distributions the default link function for the scale parameter is log-link function. See `?gmlSEM::family` to learn more.
+
+::: {#exm-exam-heter}
+## Heteroskedasticity
+
+    #Latent variable with Gaussian distribution
+    librar(gmlSEM)
+
+    model<-'level: class
+            at  as Student Attitude
+            p   as Student Performance
+
+
+            p =~ p1 + p2 + p3
+            a =~ a1 + ... + a5
+            
+            p ~ res(a)
+            heter: p ~ class'
+            
+    gmlsem<-gmlSEM(model,AttitudeData)
+
+    #Latent variable with Gamma distribution. 
+    librar(gmlSEM)
+
+    model<-'level: class
+            at  as Student Attitude
+            p   as Student Performance
+
+            family: p gamma()
+            
+            p =~ p1 + p2 + p3
+            a =~ a1 + ... + a5
+            
+            
+            p ~ res(a)
+            heter: p ~ class'
+            
+    gmlsem<-gmlSEM(model,AttitudeData)
+:::
+
+In the @exm-exam-heter, the first line in both codes introduce a '*level: class*' to the model, however in the code we have not introduced any variable that vary at the level 'class'. The advantage of using the '*level: class'* is to say in the model that the variable class is a factor even if it is not of a type factor in the data.
+
+#### Copula
 
 When defining the family of distribution for a set of variables, you can also take advantage of copula functions to induce the conditional dependency between endogenous observed or latent variables:
 
