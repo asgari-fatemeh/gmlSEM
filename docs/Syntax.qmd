@@ -171,7 +171,7 @@ The model depicted at @fig-3-level-1 demonstrates a three-level SEM model with t
 
 The *gmlSEM* syntax for the model depicated at @fig-3-level-1 is:
 
-    librar(bmlSEM)
+    librar(gmlSEM)
 
     model<-'level: school
             level: class within school
@@ -206,7 +206,7 @@ In @exm-lev2, the 'Student performance' is modeled against the 'Student Attitude
 
 The *gmlSEM* syntax for the model depicated at @fig-3-level-2 is:
 
-    librar(bmlSEM)
+    librar(gmlSEM)
 
     model<-'level: school
             level: class within school
