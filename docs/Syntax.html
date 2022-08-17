@@ -263,38 +263,6 @@ model&lt;-'level: school
 gmlsem&lt;-gmlSEM(model,AttitudeData)</code></pre>
 </div>
 <p>In <a href="#exm-lev2">Example&nbsp;6</a>, the second level is class nested within school as the third level. Both 2<sup>nd</sup> and 3<sup>rd</sup> levels and their nested structure are understood in the second line. Hence, the first line is redundant, and the model will remain unchanged if you omit the first line. For models with higher number of levels, you can use multiple <code>within</code> keyword in a single <code>level:</code> command to specify the nested structure of the levels.</p>
-<p>In <a href="#exm-lev2">Example&nbsp;6</a>, the ‘Student performance’ is modeled against the ‘Student Attitude’ and the ‘Class Climate’. In the next model we model ‘Student performance’ on ‘’Class Climate’ and the centered version ‘Student Attitude’.</p>
-<div id="fig-3-level-2" class="quarto-figure quarto-figure-center anchored">
-<figure class="figure">
-<p><img src="img/multi-level2.svg" class="img-fluid figure-img" style="width:15cm"></p>
-<p></p><figcaption class="figure-caption">Figure 2: ‘Student Attitude’ and deviation of ‘Student Attitute’ from the ‘Class Climate’ on ‘Student Performace’ in a three-level SEM</figcaption><p></p>
-</figure>
-</div>
-<p>In <a href="#fig-3-level-2">Figure&nbsp;2</a>, the scholar is interested to investigate the potential effect of between the ‘Class Climate’ on ‘Student Performance’, as well as the potential effect of ‘Excess Energy of Student’ (as deviation of ‘Student Attitude’ from ‘Class Climate’) on ‘Student Performance’. In gmlSEM syntax, you can use <code>res(.)</code> to access the deviation of a variable from its conditional expected mean. You can use the residual term as a fixed term in a regression model, or use it as a response to describe heteroskedasticity if the family distribution has a scale parameter.</p>
-<p>In the next example you can see how to write the <em>gmlSEM</em> syntax for <a href="#fig-3-level-2">Figure&nbsp;2</a> and use the residual term of ‘Student Attitude’ as a covariate in the regression model of ‘Student Performance’.</p>
-<div id="exm-exam4" class="theorem example">
-<p><span class="theorem-title"><strong>Example 7 (Three-level SEM) </strong></span>The <em>gmlSEM</em> syntax for the model depicated at <a href="#fig-3-level-2">Figure&nbsp;2</a> is:</p>
-<pre><code>librar(gmlSEM)
-
-model&lt;-'level: class within school
-        
-        at  as Student Attitude
-        c.c as Class Climate
-        s.c as School Climate
-        p   as Student Performance
-
-        c.c     varies at level class
-        s.c     varies at level school
-
-        p =~ p1 + p2 + p3
-        a =~ a1 + ... + a5
-        
-        a   ~ (1[as c.c]|class)
-        c.c ~ (1[as s.c]|school)
-        p   ~ beta * res(a) + c.c + s.c'
-        
-gmlsem&lt;-gmlSEM(model,AttitudeData)</code></pre>
-</div>
 <div class="callout-important callout callout-style-default callout-captioned">
 <div class="callout-header d-flex align-content-center">
 <div class="callout-icon-container">
@@ -320,6 +288,20 @@ Specifying the levels at which variables vary
 <i class="callout-icon"></i>
 </div>
 <div class="callout-caption-container flex-fill">
+Level’s name
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>You can use different names for labeling the levels other than the name of the variables specifying them in the data-set. If the variable’s name is different form the level’s name you can specify the variable’s name inside a parenthesis in front of the level’s name in the block e.g.&nbsp;<code>level: class(ClassID)</code>. This simply make <em>class</em> and <em>ClassID</em> aliases. You can also give a name to the first level with <code>level: BaseLevelName(1)</code>. A full example is:</p>
+<pre><code>level: Student(1) within Class(ClassID) within School(SchoolID)</code></pre>
+</div>
+</div>
+<div class="callout-note callout callout-style-default callout-captioned">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-caption-container flex-fill">
 Order of lines
 </div>
 </div>
@@ -328,7 +310,7 @@ Order of lines
 <pre><code>model&lt;-'level: class
 
         at as attitude
-        at  =~ a1 + ... + a5
+        at  =~ lambda1*a1 + ... + lambda5*a5
         
         c.c as class climate
         c.c varies at level class
@@ -347,9 +329,9 @@ Identifiability of models
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p>In factor models, you have to take care of identifiablity by putting a constraint on the factor loadings or the variance of latent variable. If you did not specify the necessary constraints, <em>gmlSEM</em> will set the first factor loading to one by default. You can either set the variance to one by</p>
+<p>In factor models, you have to take care of identifiablity by putting necessary constraints on the factor loadings or the variance of latent variable. If you did not specify the necessary constraints, <em>gmlSEM</em> will set the first factor loading to one by default. You can either fix the variance to a constant value (e.g.&nbsp;1) by</p>
 <pre><code>at ~~ 1*at</code></pre>
-<p>or set a factor loading by pre-multiplication mechanism like</p>
+<p>or fix a factor loading by pre-multiplication mechanism like</p>
 <pre><code>at =~ a1 + 1*a2 + a3 + a4 + a5</code></pre>
 </div>
 </div>
@@ -359,12 +341,12 @@ Identifiability of models
 <p>In <em>gmlSEM</em>, you can define the distribution of endogenous observed or latent variables in a <code>family:</code> command. In the following example, we define a factor model with zero-inflated beta distribution for indicators. You can use many other distributions in <em>gmlSEM</em>. See <code>?gmlSEM::family</code> to learn more about different distributions that is provided in the package. You can also define your own distribution to use in <em>gmlSEM</em>.</p>
 <p>In the following two examples you can see how we can use the family: block to fit a probit regression model and a factor model with zero-inflated beta indicators:</p>
 <div id="exm-fam5" class="theorem example">
-<p><span class="theorem-title"><strong>Example 8 (A probit regression model) </strong></span></p>
+<p><span class="theorem-title"><strong>Example 7 (A probit regression model) </strong></span></p>
 <pre><code>model&lt;-'family: y binomial(link="probit")
         y = x1 + x2'</code></pre>
 </div>
 <div id="exm-fam1" class="theorem example">
-<p><span class="theorem-title"><strong>Example 9 (Factor model with zero-inflated beta indicators) </strong></span></p>
+<p><span class="theorem-title"><strong>Example 8 (Factor model with zero-inflated beta indicators) </strong></span></p>
 <pre><code>model&lt;-'family: y1, y2, ..., y5 zoib(link=c("probit","logit"),type="[0,1]")
         eta =~ y1 + ... + y5'</code></pre>
 </div>
@@ -372,7 +354,7 @@ Identifiability of models
 <h4 data-number="2.5.1" class="anchored" data-anchor-id="heteroskedasticity"><span class="header-section-number">2.5.1</span> Heteroskedasticity</h4>
 <p>If the chosen family distribution for an observed response variable or a latent variable encompasses a scale parameter, you can write a regression model in a <code>heter:</code> block to explain heteroskedasticity. In the next two examples we have defined an SEM in which the latent variable ‘Student Performance’ has a non-homogenous variance in different classes. In the first example the latent variable ‘Student Performance’ is a Gaussian variable which its variance is explained through a regression model over class using a default <code>log</code> link function. In the second example the latent variable is assumed to have gamma distribution. If the chosen family does not have a scale parameter the gmlSEM will stop by raising an error. You can use different link functions for the mean and scale parameters in the regression blocks using <code>link</code> (or <code>link.mean</code>) and <code>link.scale</code> arguments. If you have no idea about the appropriate link functions you can ignore passing any argument into family distribution and rely on the default link functions. For the Gaussian and Gamma distributions the default link function for the scale parameter is log-link function. See <code>?gmlSEM::family</code> to learn more.</p>
 <div id="exm-exam-heter" class="theorem example">
-<p><span class="theorem-title"><strong>Example 10 (Heteroskedasticity) </strong></span></p>
+<p><span class="theorem-title"><strong>Example 9 (Heteroskedasticity) </strong></span></p>
 <pre><code>#Latent variable with Gaussian distribution
 librar(gmlSEM)
 
@@ -407,19 +389,19 @@ model&lt;-'level: class
         
 gmlsem&lt;-gmlSEM(model,AttitudeData)</code></pre>
 </div>
-<p>In the <a href="#exm-exam-heter">Example&nbsp;10</a>, the first line in both codes introduce a ‘<em>level: class</em>’ to the model, however in the code we have not introduced any variable that vary at the level ‘class’. The advantage of using the ’<em>level: class’</em> is to say in the model that the variable class is a factor even if it is not of a type factor in the data.</p>
+<p>In the <a href="#exm-exam-heter">Example&nbsp;9</a>, the first line in both codes introduce a ‘<em>level: class</em>’ to the model, however in the code we have not introduced any variable that vary at the level ‘class’. The advantage of using the ’<em>level: class’</em> is to say in the model that the variable class is a factor even if it is not of a type factor in the data.</p>
 </section>
-<section id="copula" class="level4" data-number="2.5.2">
-<h4 data-number="2.5.2" class="anchored" data-anchor-id="copula"><span class="header-section-number">2.5.2</span> Copula</h4>
+<section id="sec-copula" class="level4" data-number="2.5.2">
+<h4 data-number="2.5.2" class="anchored" data-anchor-id="sec-copula"><span class="header-section-number">2.5.2</span> Copula</h4>
 <p>When defining the family of distribution for a set of variables, you can also take advantage of copula functions to induce the conditional dependency between endogenous observed or latent variables:</p>
 <div id="exm-fam2" class="theorem example">
-<p><span class="theorem-title"><strong>Example 11 (Using copula to induce conditional dependency in factor models) </strong></span></p>
+<p><span class="theorem-title"><strong>Example 10 (Using copula to induce conditional dependency in factor models) </strong></span></p>
 <pre><code>model&lt;-'family: y1, y2, ..., y5  binomial(link="probit") copula(type="gaussian")
         eta =~ y1 + ... + y5'</code></pre>
 </div>
 <p>Introducing a copula term in the <code>family:</code> command leads to multivariate conditional dependency between the variables in that command provided that they vary at the same level. If the variables vary at different levels, a warning is produced and each set of variables varying at the same level will be considered to be conditionally dependent using the introduced copula. For example in the following model, the set of <code>y1,...,y5</code> are conditionally dependent according to the Gaussian copula at level class, and <code>y6,...,y10</code> are conditionally dependent according to the Gaussian copula at level school.</p>
 <div id="exm-fam3" class="theorem example">
-<p><span class="theorem-title"><strong>Example 12 (Using copula to induce conditional dependency in a multi-level factor model) </strong></span></p>
+<p><span class="theorem-title"><strong>Example 11 (Using copula to induce conditional dependency in a multi-level factor model) </strong></span></p>
 <pre><code>model&lt;-'level:  class within school
         y1, ..., y5   vary at level class
         y6, ..., y10  vary at level school
@@ -429,7 +411,7 @@ gmlsem&lt;-gmlSEM(model,AttitudeData)</code></pre>
         eta1 =~ y1 + ... + y5
         eta2 =~ y6 + ... + y10'</code></pre>
 </div>
-<p>In <a href="#exm-fam3">Example&nbsp;12</a>, <em>eta1</em> is a latent variable varying at level <em>class</em>, and <em>eta2</em> is a latent variable varying at level <em>school</em>. Adding a <code>family:</code> command with copula for defining the family of distributions for these two variable produces a warning and <em>gmlSEM</em> simply ignores the copula structure:</p>
+<p>In <a href="#exm-fam3">Example&nbsp;11</a>, <em>eta1</em> is a latent variable varying at level <em>class</em>, and <em>eta2</em> is a latent variable varying at level <em>school</em>. Adding a <code>family:</code> command with copula for defining the family of distributions for these two variable produces a warning and <em>gmlSEM</em> simply ignores the copula structure:</p>
 <div>
 <pre><code>model&lt;-'level: class within school
         y1, ..., y5  vary at level class
@@ -443,7 +425,7 @@ gmlsem&lt;-gmlSEM(model,AttitudeData)</code></pre>
 </div>
 <p>You can also use copula functions to induce conditional dependency between different family of distributions by introducing the copula in a separate <code>family:</code> command as follow:</p>
 <div id="exm-fam4" class="theorem example">
-<p><span class="theorem-title"><strong>Example 13 (Conditional dependency between variables with different distributions) </strong></span></p>
+<p><span class="theorem-title"><strong>Example 12 (Conditional dependency between variables with different distributions) </strong></span></p>
 <pre><code>model&lt;-'family: y1, ..., y5  binomial(link="probit")
         family: y6, ..., y10 beta(link="logit")
         family: y1, ..., y10 copula(type="gaussian")
@@ -474,6 +456,87 @@ Note
 <p>A binomial family accompanied with a Gaussian copula will result in another good modification to the model. See <code>?gmlSEM::copula</code> to learn more.</p>
 </div>
 </div>
+<div class="callout-note callout callout-style-default callout-captioned">
+<div class="callout-header d-flex align-content-center">
+<div class="callout-icon-container">
+<i class="callout-icon"></i>
+</div>
+<div class="callout-caption-container flex-fill">
+Default specification of copula function in <em>gmlSEM</em>
+</div>
+</div>
+<div class="callout-body-container callout-body">
+<p>specifying a copula function in the family block is optional. If you specify conditional dependency between variables vary at the same level by using <code>~~</code> operator, <em>gmlSEM</em> will consider a Gaussian copula function by default to induce the corresponding conditional dependency if you do not explicitly specify the copula function in a <code>family:</code> block.</p>
+</div>
+</div>
+</section>
+<section id="forget-unique-factors" class="level4" data-number="2.5.3">
+<h4 data-number="2.5.3" class="anchored" data-anchor-id="forget-unique-factors"><span class="header-section-number">2.5.3</span> Forget unique factors</h4>
+<p>If the distribution of a random variable belongs to the location-scale family of distributions such as Gaussian or t distribution, we can write the variable as sum of a linear predictor and a residual term (called unique factor). The residual term or unique factor reflects the variation of the response variable about its conditional mean. In general and for other family of distributions this does not make sense, and the variation of the variable is described by the probability function not the unique factor.</p>
+<p>In the location-scale family of distributions such as Gaussian and t distributions, the residual term and centered variable coincide and can be used interchangeably. Hence, in <em>gmlSEM</em> we do not have anything named residual or unique factor and we avoid them, instead <em>gmlSEM</em> encompasses a <em>centered</em> term which is equivalent to the residual term or unique factor in the Gaussian and t distributions and reflects deviation of the variable from its conditional expected mean in general. In <em>gmlSEM</em> syntax, you can use <code>cent(.)</code> to access the centered version of any variable, and use it on the right hand side of a regression model <del>or a measurement model</del>.</p>
+<p>In the SEM literature with Gaussian indicators, covariances between unique factors implies the conditional dependency between the indicators. In <em>gmlSEM</em> conditional dependency will be accomplished by using copula functions as described in <a href="#sec-copula">Section&nbsp;2.5.2</a>. The result will be the same in SEM and <em>gmlSEM</em> if indicators are Gaussian and you use a Gaussian copula function to imply conditional dependencies.</p>
+<p>In the next example we will see how to use the <code>cent(.)</code> term in <em>gmlSEM</em> syntax when writing a model. Consider the <a href="#exm-lev2">Example&nbsp;6</a>, in which the ‘Student performance’ is modeled against the ‘Student Attitude’ and the ‘Class Climate’. It may be in the interest of the scholar to investigate the potential effect of ‘Class Climate’ on ‘Student Performance’, as well as the potential effect of ‘Excess Energy of Student’ (as deviation of ‘Student Attitude’ from ‘Class Climate’) on ‘Student Performance’. In this example ‘Excess Energy of Student’ can be understood as residual term of ‘Student Attitude’ or as it is said the ‘Centered Student Attitude’. This model is SEM framework usually depicted as the graph in <a href="#fig-3-level-2">Figure&nbsp;2</a>.</p>
+<div id="fig-3-level-2" class="quarto-figure quarto-figure-center anchored">
+<figure class="figure">
+<p><img src="img/multi-level3.svg" class="img-fluid figure-img" alt="'Student Attitude' and deviation of 'Student Attitute' from the 'Class Climate' on 'Student Performace' in a three-level SEM"></p>
+<p></p><figcaption class="figure-caption">Figure 2: ‘Centered Student Attitude’ and ‘Class Climate’ on ‘Student Performace’ in a three-level SEM</figcaption><p></p>
+</figure>
+</div>
+<p>As we discussed by now, <em>gmlSEM</em> avoids using unique or residual terms. So in gmlSEM graphs unique factors represents the centered version of random variables,drawing unique factors for describing the variation of the response variables. The variation of response variables is explained by the corresponding family distribution and hence we do not draw unique factors, and the conditional dependency is described by the copula function. The <em>gmlSEM</em> syntax for the model depicted at <a href="#fig-3-level-2">Figure&nbsp;2</a> comes next.</p>
+<div id="exm-exam4" class="theorem example">
+<p><span class="theorem-title"><strong>Example 13 (Using centered variables) </strong></span>The <em>gmlSEM</em> syntax for the model depicated at <a href="#fig-3-level-2">Figure&nbsp;2</a> is:</p>
+<pre><code>librar(gmlSEM)
+
+model&lt;-'level: class within school
+        
+        at  as Student Attitude
+        c.c as Class Climate
+        s.c as School Climate
+        p   as Student Performance
+        c.p as Class Performance
+
+        c.c,c.p vary at level class
+        s.c     varies at level school
+        
+        family: c.c,c.p  copula(type="gaussian")
+        family: p1,p2,p3 copula(type="gaussian",covariance=0)
+
+        p =~ p1 + p2 + p3
+        a =~ a1 + ... + a5
+        
+        a   ~ (1[as c.c]|class)
+        c.c ~ (1[as s.c]|school)
+        p   ~ beta * cent(a) + c.c + s.c + (1[as c.p]|class)'
+        
+        p1 ~~ p2
+        
+gmlsem&lt;-gmlSEM(model,AttitudeData)</code></pre>
+</div>
+<p>Consider that specifying a copula function in the family block is not mandatory, and if you specify conditional dependency between variables vary at the same level, <em>gmlSEM</em> will consider a Gaussian copula function by default to induce the corresponding conditional dependency even if you do not explicitly specify a copula function in a <code>family:</code> block. Hence, the previous code is equivalent to:</p>
+<pre><code>librar(gmlSEM)
+
+model&lt;-'level: class within school
+        
+        at  as Student Attitude
+        c.c as Class Climate
+        s.c as School Climate
+        p   as Student Performance
+        c.p as Class Performance
+
+        c.c,c.p vary at level class
+        s.c     varies at level school
+
+        p =~ p1 + p2 + p3
+        a =~ a1 + ... + a5
+        
+        a   ~ (1[as c.c]|class)
+        c.c ~ (1[as s.c]|school)
+        p   ~ beta * cent(a) + c.c + s.c + (1[as c.p]|class)'
+        
+        p1  ~~ p2
+        c.c ~~ c.p
+        
+gmlsem&lt;-gmlSEM(model,AttitudeData)</code></pre>
 
 </section>
 </section>
