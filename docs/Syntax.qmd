@@ -7,7 +7,7 @@ number-sections: true
 fig-responsive: true
 ---
 
-## Genelaralized Multi-Level SEM in R
+## Generalized Multi-Level SEM in R
 
 This project aims at developing Generalized Multi-Level SEM in R. The main motivation was to develop SEM models for zero-inflated and zero-one-inflated beta responses (i.e. respones that take values on either \[0,1\], \[0,1) or (0,1\] intervals). The approach is based on maximum likelihood estimation and is in the line of the works of @muthen2002beyond and @rabe2004generalized. Since introducing other distributions and families and their zero (or *d*)-inflated versions are straightforward and a complete framework for Generalized SEM in the **#rstat** is absent, we have implemented the codes to support the other distributions. In the case of the exponential family of distributions, *gmlSEM* supports models which can be run in *gsem* at *stata* software. Additionally, in confronting outlier data in our main motivation problem, we took advantage of Trimmed Likelihood (TL) Estimators as in @muller2003breakdown and developed an algorithm to employ TL Estimators in multi-level settings which is available in the *mlgSEM* package.
 
