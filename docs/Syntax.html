@@ -174,7 +174,7 @@ gmlsem&lt;-gmlSEM(model,AttitudeData)</code></pre>
 </section>
 <section id="level" class="level3" data-number="2.4">
 <h3 data-number="2.4" class="anchored" data-anchor-id="level"><span class="header-section-number">2.4</span> Level</h3>
-<p>In a Multi-Level SEM, it is assumed that the data has a multi-layer clustered structure. The observed and latent variables vary at different levels. In <em>gmlSEM</em>, you can use the <code>level:</code> command to specify the levels and nested levels and use the phrase <code>vary at level</code> or its variant <code>varies at level</code> to specify which latent or observed variable varies at which level if necessary. In a Multi-Level model at <em>gmlSEM</em>, we use ‘record’ and ‘elementary unit’ interchangeably to refer to the units at the lowest level. The data can be provided in <em>gmlSEM</em> with one or more data frame. When the <em>gmlSEM</em> is provided by a data frame, an elementary unit is simply a row in the data frame. When multiple data frames feed to <em>gmlSEM</em>, an elementary unit is a row in the data frame representing data at the lowest level.</p>
+<p>In a Multi-Level SEM, it is assumed that the data has a multi-layer clustered structure. The observed and latent variables vary at different levels. In <em>gmlSEM</em>, you can use the <code>level:</code> command to specify the levels and nested levels and use the phrase <code>vary at level</code> or its variant <code>varies at level</code> to specify which latent or observed variable varies at which level if necessary. In a Multi-Level model at <em>gmlSEM</em>, we use ‘elementary unit’ to refer the units or records at the lowest level. The data can be provided in <em>gmlSEM</em> with one or more data frame. When the <em>gmlSEM</em> is provided by a data frame, an elementary unit is simply a row in the data frame. When multiple data frames feed to <em>gmlSEM</em>, an elementary unit is a row in the data frame representing data at the lowest level.</p>
 <p>Consider the simulated dataset <code>gmlSEM::AttitudeData</code>. Students’ attitudes are recorded in variables a1,…,a5 and the performances of students in three major courses are recorded as p1, p2, p3. The subjects are clustered in classes and schools, and the school id and class id for each subject are specified in variables <em>school</em> and <em>class</em>. In <em>gmlSEM</em>, to define a Multi-Level factor model, we can use one or more <code>level:</code> blocks to specify the levels,</p>
 <div id="exm-lev1" class="theorem example">
 <p><span class="theorem-title"><strong>Example 4 (Factor model with two levels) </strong></span></p>
@@ -200,8 +200,8 @@ gmlsem&lt;-gmlSEM(model,AttitudeData)</code></pre></td>
 </tbody>
 </table>
 </div>
-<p>In <a href="#exm-lev1">Example&nbsp;4</a> a factor model with two levels is defined. The first level is ‘base’ level encompasses elementary units, and the second level is defined by variable school with <code>level: school</code>, and the latent variable <em>s.c</em> as ‘school climate’ varies at the second level.</p>
-<p>Combining random effects in SEM make the models more flexible and easy to write and interpret in some scenarios. To see an example, we will rewrite an equivalent form of the variance-component factor model in <a href="#exm-exam1">Example&nbsp;3</a> in terms of a two-level factor model. That is, to define two latent variables with the same factor model, one varies at the base level and the other one varies at the level class named ‘class climate’, with a constraint that factor loadings are equal in both factor models.</p>
+<p>In <a href="#exm-lev1">Example&nbsp;4</a> a factor model with two levels is defined. The first level encompasses elementary units, and the second level is defined by variable school with <code>level: school</code>, and the latent variable <em>s.c</em> as ‘school climate’ varies at the second level.</p>
+<p>Combining random effects in SEM make the models more flexible and easy to write and interpret in some scenarios. To see an example, we will rewrite an equivalent form of the variance-component factor model in <a href="#exm-exam1">Example&nbsp;3</a> in terms of a two-level factor model. That is, to define two latent variables with the same factor model, one varies at the first level and the other one varies at the level class named ‘class climate’, with a constraint that factor loadings are equal in both factor models.</p>
 <div id="exm-exam2" class="theorem example">
 <p><span class="theorem-title"><strong>Example 5 (Variance-component factor model-hard syntax) </strong></span></p>
 <table class="table">
@@ -229,7 +229,7 @@ gmlsem&lt;-gmlSEM(model,AttitudeData)</code></pre></td>
 </tbody>
 </table>
 </div>
-<p>In <a href="#exm-exam2">Example&nbsp;5</a>, a level is defined and a latent variable ‘<em>c.c</em>’ as ‘class climate’ which varies at this level. Two latent factors ‘attitude’ and ‘class climate’ are defined with a constraint that factor loadings are equal in both factor model, while attitude varies at the level ‘base’ and ‘class climate’ varies at the level ‘class’. The two factor models could also be combined into a single line as:</p>
+<p>In <a href="#exm-exam2">Example&nbsp;5</a>, a level is defined and a latent variable ‘<em>c.c</em>’ as ‘Class Climate’ which varies at this level. Two latent factors ‘attitude’ and ‘class climate’ are defined with a constraint that factor loadings are equal in both factor model, while attitude varies at the first level and ‘Class Climate’ varies at the level ‘class’. The two factor models could also be combined into a single line as:</p>
 <pre><code>        c.c,at =~ lambda1*a1 + ... + lambda5*a5</code></pre>
 <p>The model depicted at <a href="#fig-3-level-1">Figure&nbsp;1</a> demonstrates a three-level SEM model with two measurement models defined at the first level. Two latent variables ‘Class Climate’ and ‘School Climate’ can be understood either as random intercepts at regression model for ‘Student Attitude’ or modeled by factorial models with the same structure as ‘Student Attitude’ with equality constraints for factor loadings as in <a href="#exm-exam2">Example&nbsp;5</a>.</p>
 <div id="fig-3-level-1" class="quarto-figure quarto-figure-center anchored">
@@ -273,7 +273,7 @@ Specifying the levels at which variables vary
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p>In <em>gmlSEM</em>, you have to use <code>vary at level</code> phrase and explicitly list all <em>latent variables and observed response variables</em> that vary at the second level or higher. If for a latent variable or observed response variable the level is not specified, the <em>gmlSEM</em> will consider the level ‘base’ for it. There is no need to list the latent variables and observed response variables varying at the level ‘<em>base</em>’, however you can do it by</p>
+<p>In <em>gmlSEM</em>, you have to use <code>vary at level</code> phrase and explicitly list all <em>latent variables and observed response variables</em> that vary at the second level or higher. If for a latent variable or observed response variable the level is not specified, the <em>gmlSEM</em> will consider it to belong the first level. There is no need to list the latent variables and observed response variables varying at the first level, however you can do it by</p>
 <pre><code>y varies at level 1</code></pre>
 <p>In a Multi-Level model in <em>gmlSEM</em>, you have to note that</p>
 <ul>
@@ -292,7 +292,7 @@ Level’s name
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p>You can use different names for labeling the levels other than the name of the variables specifying them in the data-set. If the variable’s name is different form the level’s name you can specify the variable’s name inside a parenthesis in front of the level’s name in the block e.g.&nbsp;<code>level: class(ClassID)</code>. This simply make <em>class</em> and <em>ClassID</em> aliases. You can also give a name to the first level with <code>level: BaseLevelName(1)</code>. A full example is:</p>
+<p>You can use different names for labeling the levels other than the name of the variables specifying them in the data-set. If the variable’s name is different form the level’s name you can specify the variable’s name inside a parenthesis in front of the level’s name in the <code>level:</code> block e.g.&nbsp;<code>level: class(ClassID)</code>. This simply make <em>class</em> and <em>ClassID</em> aliases. You can also give a name to the first level with <code>level: BaseLevelName(1)</code>. A full example is:</p>
 <pre><code>level: Student(1) within Class(ClassID) within School(SchoolID)</code></pre>
 </div>
 </div>
@@ -366,7 +366,7 @@ model&lt;-'level: class
         p =~ p1 + p2 + p3
         a =~ a1 + ... + a5
         
-        p ~ res(a)
+        p ~ a
         heter: p ~ class'
         
 gmlsem&lt;-gmlSEM(model,AttitudeData)
@@ -378,22 +378,23 @@ model&lt;-'level: class
         at  as Student Attitude
         p   as Student Performance
 
-        family: p gamma()
+        family: p gamma(link.scale="log")
         
         p =~ p1 + p2 + p3
         a =~ a1 + ... + a5
         
         
-        p ~ res(a)
+        p ~ a
+        
         heter: p ~ class'
         
 gmlsem&lt;-gmlSEM(model,AttitudeData)</code></pre>
 </div>
-<p>In the <a href="#exm-exam-heter">Example&nbsp;9</a>, the first line in both codes introduce a ‘<em>level: class</em>’ to the model, however in the code we have not introduced any variable that vary at the level ‘class’. The advantage of using the ’<em>level: class’</em> is to say in the model that the variable class is a factor even if it is not of a type factor in the data.</p>
+<p>In the <a href="#exm-exam-heter">Example&nbsp;9</a>, the first line in both codes introduce a ‘<em>level: class</em>’ to the model, however in the code we have not introduced any variable that vary at the level ‘<em>class</em>’. The advantage of using the ’<em>level: class’</em> is to say to the <em>gmlSEM</em> that the variable class is a factor even if it is not of a type factor in the data.</p>
 </section>
 <section id="sec-copula" class="level4" data-number="2.5.2">
 <h4 data-number="2.5.2" class="anchored" data-anchor-id="sec-copula"><span class="header-section-number">2.5.2</span> Copula</h4>
-<p>When defining the family of distribution for a set of variables, you can also take advantage of copula functions to induce the conditional dependency between endogenous observed or latent variables:</p>
+<p>When defining the family of distribution for a set of variables, you can also take advantage of copula functions to induce the conditional dependency between variables:</p>
 <div id="exm-fam2" class="theorem example">
 <p><span class="theorem-title"><strong>Example 10 (Using copula to induce conditional dependency in factor models) </strong></span></p>
 <pre><code>model&lt;-'family: y1, y2, ..., y5  binomial(link="probit") copula(type="gaussian")
@@ -473,9 +474,9 @@ Default specification of copula function in <em>gmlSEM</em>
 <section id="forget-unique-factors" class="level4" data-number="2.5.3">
 <h4 data-number="2.5.3" class="anchored" data-anchor-id="forget-unique-factors"><span class="header-section-number">2.5.3</span> Forget unique factors</h4>
 <p>If the distribution of a random variable belongs to the location-scale family of distributions such as Gaussian or t distribution, we can write the variable as sum of a linear predictor and a residual term (called unique factor). The residual term or unique factor reflects the variation of the response variable about its conditional mean. In general and for other family of distributions this does not make sense, and the variation of the variable is described by the probability function not the unique factor.</p>
-<p>In the location-scale family of distributions such as Gaussian and t distributions, the residual term and centered variable coincide and can be used interchangeably. Hence, in <em>gmlSEM</em> we do not have anything named residual or unique factor and we avoid them, instead <em>gmlSEM</em> encompasses a <em>centered</em> term which is equivalent to the residual term or unique factor in the Gaussian and t distributions and reflects deviation of the variable from its conditional expected mean in general. In <em>gmlSEM</em> syntax, you can use <code>cent(.)</code> to access the centered version of any variable, and use it on the right hand side of a regression model <del>or a measurement model</del>.</p>
+<p>In the location-scale family of distributions such as Gaussian and t distributions, the residual term and centered variable coincide and can be used interchangeably. Hence, in <em>gmlSEM</em> we do not have anything named residual or unique factor and we avoid them, instead <em>gmlSEM</em> encompasses a <em>centered</em> term which is equivalent to the residual term or unique factor in the Gaussian and t distributions and reflects deviation of the variable from its conditional expected mean in general. In <em>gmlSEM</em> syntax, you can use <code>center(.)</code> to access the centered version of any variable, and use it on the right hand side of a regression model <del>or a measurement model</del>.</p>
 <p>In the SEM literature with Gaussian indicators, covariances between unique factors implies the conditional dependency between the indicators. In <em>gmlSEM</em> conditional dependency will be accomplished by using copula functions as described in <a href="#sec-copula">Section&nbsp;2.5.2</a>. The result will be the same in SEM and <em>gmlSEM</em> if indicators are Gaussian and you use a Gaussian copula function to imply conditional dependencies.</p>
-<p>In the next example we will see how to use the <code>cent(.)</code> term in <em>gmlSEM</em> syntax when writing a model. Consider the <a href="#exm-lev2">Example&nbsp;6</a>, in which the ‘Student performance’ is modeled against the ‘Student Attitude’ and the ‘Class Climate’. It may be in the interest of the scholar to investigate the potential effect of ‘Class Climate’ on ‘Student Performance’, as well as the potential effect of ‘Excess Energy of Student’ (as deviation of ‘Student Attitude’ from ‘Class Climate’) on ‘Student Performance’. In this example ‘Excess Energy of Student’ can be understood as residual term of ‘Student Attitude’ or as it is said the ‘Centered Student Attitude’. This model is SEM framework usually depicted as the graph in <a href="#fig-3-level-2">Figure&nbsp;2</a>.</p>
+<p>In the next example we will see how to use the <code>center(.)</code> term in <em>gmlSEM</em> syntax when writing a model. Consider the <a href="#exm-lev2">Example&nbsp;6</a>, in which the ‘Student performance’ is modeled against the ‘Student Attitude’ and the ‘Class Climate’. It may be in the interest of the scholar to investigate the potential effect of ‘Class Climate’ on ‘Student Performance’, as well as the potential effect of ‘Excess Energy of Student’ (as deviation of ‘Student Attitude’ from ‘Class Climate’) on ‘Student Performance’. In this example ‘Excess Energy of Student’ can be understood as residual term of ‘Student Attitude’ or as it is said the ‘Centered Student Attitude’. This model is SEM framework usually depicted as the graph in <a href="#fig-3-level-2">Figure&nbsp;2</a>.</p>
 <div id="fig-3-level-2" class="quarto-figure quarto-figure-center anchored">
 <figure class="figure">
 <p><img src="img/multi-level3.svg" class="img-fluid figure-img" alt="'Student Attitude' and deviation of 'Student Attitute' from the 'Class Climate' on 'Student Performace' in a three-level SEM"></p>
@@ -506,7 +507,7 @@ model&lt;-'level: class within school
         
         a   ~ (1[as c.c]|class)
         c.c ~ (1[as s.c]|school)
-        p   ~ beta * cent(a) + c.c + s.c + (1[as c.p]|class)'
+        p   ~ beta * center(a) + c.c + s.c + (1[as c.p]|class)'
         
         p1 ~~ p2
         
@@ -531,7 +532,7 @@ model&lt;-'level: class within school
         
         a   ~ (1[as c.c]|class)
         c.c ~ (1[as s.c]|school)
-        p   ~ beta * cent(a) + c.c + s.c + (1[as c.p]|class)'
+        p   ~ beta * center(a) + c.c + s.c + (1[as c.p]|class)'
         
         p1  ~~ p2
         c.c ~~ c.p
