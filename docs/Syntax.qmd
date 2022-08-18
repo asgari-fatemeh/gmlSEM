@@ -23,7 +23,7 @@ The extended syntax helps you to:
 
 ## Extended Syntax
 
-Basically, the *gmlSEM* syntax for defining Generalized Multi-Level SEM is an extended version of *lavaan* syntax (@rosseel2012lavaan). So if you are not familiar with lavaan syntax, read the [lavaan manual](https://lavaan.ugent.be/tutorial/tutorial.pdf) first and continue reading the *gmlSEM* extended syntax. Starting with the *lavaan* syntax, in *gmlSEM* extended syntax you have anything you used to have with *lavaan* syntax, except in the way we define level blocks.
+Basically, the *gmlSEM* syntax for defining Generalized Multi-Level SEM is an extended version of *lavaan* syntax (@rosseel2012lavaan). So if you are not familiar with lavaan syntax, read the [lavaan manual](https://lavaan.ugent.be/tutorial/tutorial.pdf) first and continue reading the *gmlSEM* extended syntax. Starting with the *lavaan* syntax, in *gmlSEM* extended syntax you have anything you used to have with *lavaan* syntax, except in the way we define level blocks, and few things listed and the end of this tutorial.
 
 In a glimpse, the extended *gmlSEM* syntax helps you to define hierarchical structure of data using `level:` command for Multi-Level SEM. You can use `family:` command to define the family of distributions of response variables and also use copula functions to imply conditional dependency in a set of response variables varying at the same level. You can define random terms in the regression blocks and reuse them as response or covariate terms in other regression models. Using *gmlSEM* syntax, you can also fit semi-parameteric regression models by using `s()` terms in the regression block which add smooth terms to the regression model, like `y=s(x)`. See `?gmlSEM::s` to learn more. Additionally, *gmlSEM* syntax encompasses other features such as *ellipsis* and *alias*, so you can more easily work around the codes to develop your *gmlSEM* models. Though in *gmlSEM*, *ellipsis* is not a necessary part, it helps a lot to achieve a concise presentation of the model. Hence, we start with introducing this easy feature and other easy parts, and then will continue with the *level* and *family* blocks.
 
@@ -101,7 +101,7 @@ You can assign name to a random term, so then you can use it as a response or co
 
 In the figure in @exm-exam1, latent variables serving as residuals are not enclosed in circles. In th *gmlSEM* syntax in this example, the name specifier operator `[as .]` is used to assign the name 'c.c' to the random intercept (the random intercept in this model can be interpreted as 'class climate'). If you do not assign names to the random terms, *gmlSEM* automatically assigns names to the random terms by convention with the template *response.level.covariate*. For example in `at = 0 + (1 + x |class)`, the *gmlSEM* assign names `at.class.1` and `at.class.x` by convention to the random intercept and random slop terms, respectively.
 
-Similar to *lavaan*, in the measurement and regression models, you can assign labels to the parameters of the model using pre-multiplication mechanism (using `*` operator). In a regression model, pre-multiplication mechanism assigns parameter labels to either regression coefficients or random terms' standard deviation, depending it is a fixed term or random term. Thus, in the following model, `beta` refers to the regression coefficient of the fixed term `x`, and `c.c.std` refers to the standard deviation of the random intercept term in the model.
+Similar to *lavaan*, in the measurement and regression models, you can assign labels to the parameters of the model using pre-multiplication mechanism (using `*` operator). In a regression model, pre-multiplication mechanism assigns parameter labels to either regression coefficients or random terms' standard deviation, depending it is a fixed term or a random term. Thus, in the following model, `beta` refers to the regression coefficient of the fixed term `x`, and `c.c.std` refers to the standard deviation of the random intercept term in the model.
 
     library(gmlSEM)
 
@@ -115,7 +115,7 @@ Similar to *lavaan*, in the measurement and regression models, you can assign la
 
 ### Level
 
-In a Multi-Level SEM, it is assumed that the data has a multi-layer clustered structure. The observed and latent variables vary at different levels. In *gmlSEM*, you can use the `level:` command to specify the levels and nested levels and use the phrase `vary at level` or its variant `varies at level` to specify which latent or observed variable varies at which level if necessary. In a Multi-Level model at *gmlSEM*, we use 'elementary unit' to refer the units or records at the lowest level. The data can be provided in *gmlSEM* with one or more data frame. When the *gmlSEM* is provided by a data frame, an elementary unit is simply a row in the data frame. When multiple data frames feed to *gmlSEM*, an elementary unit is a row in the data frame representing data at the lowest level.
+In a Multi-Level SEM, it is assumed that the data has a multi-layer clustered structure. The observed and latent variables vary at different levels. In *gmlSEM*, you can use the `level:` command to specify the levels and nested levels and use the phrase `vary at level` or its variant `varies at level` to specify which latent or observed variable varies at which level, if necessary. In a Multi-Level model at *gmlSEM*, we use 'elementary unit' to refer the units at the lowest level. The data can be provided in *gmlSEM* with one or more data-frame. When the *gmlSEM* is provided by one data-frame, an elementary unit is simply a row in that data-frame. When multiple data-frames feed to *gmlSEM*, an elementary unit is a row in the data-frame representing data at the lowest level.
 
 Consider the simulated dataset `gmlSEM::AttitudeData`. Students' attitudes are recorded in variables a1,...,a5 and the performances of students in three major courses are recorded as p1, p2, p3. The subjects are clustered in classes and schools, and the school id and class id for each subject are specified in variables *school* and *class*. In *gmlSEM*, to define a Multi-Level factor model, we can use one or more `level:` blocks to specify the levels,
 
@@ -214,7 +214,7 @@ In a Multi-Level model in *gmlSEM*, you have to note that
 
 :::{.callout-note}
 
-## Level's name
+#### Level's name
 
 You can use different names for labeling the levels other than the name of the variables specifying them in the data-set. If the variable's name is different form the level's name you can specify the variable's name inside a parenthesis in front of the level's name in the `level:` block e.g. `level: class(ClassID)`. This simply make *class* and *ClassID* aliases. You can also give a name to the first level with `level: BaseLevelName(1)`. A full example is:
 
@@ -470,3 +470,19 @@ Consider that specifying a copula function in the family block is not mandatory,
             c.c ~~ c.p
             
     gmlsem<-gmlSEM(model,AttitudeData)
+
+## Further notes
+
+As we noted before, the *gmlSEM* syntax helps you to define levels in your model and different family of distributions. In addition there is few other things to consider, speccially if you come from *lavaan*:
+
+1.  In *gmlSEM* the `|` operator is only used within parenthesis on the right hand side of a regression model to define random effects as you do in `lme3::lmer`. In *lavaan* this operator helps you to define thresholds for the categorical endogenous variables. In *gmlSEM* you will define nominal and categorical random variables in the family: block such as
+
+        family: y ordinal(levels=c(1,2,3,4),thresholds=c(0,NA,NA),latent.family=Gaussian())
+
+    See `?gmlSEM::family` to learn more.
+
+2.  Latent variables have zero mean by default if their mean is not fixed to another value by introducing a constraints. Hence, in the regression models with a latent variable does not have an intercept by default. On the other hand, *gmlSEM* includes intercept in the regression model with observed endogenous variables as response. You can change the default by explicitly including or excluding the intercept in a regression model.
+
+3.  As in *lavaan*, you can use label(.), equal(.), and start(.) modifiers with pre-multiplication mechanism. you can also use any other functions which gives a sensible scalar or vector result (for multiple group analysis).
+
+4.  You can extend the family of distributions in *gmlSEM* to fit your needs. However at this stage, you have to define your new family of distributions in the *c language*. To learn how you can define your own family of distribution and use it in *gmlSEM* see `?gmlSEM::extend`.
