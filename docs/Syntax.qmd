@@ -31,9 +31,9 @@ During this tutorial, we use `gmlSEM::AttitudeDataset`. It is a simulated data i
 
 ### Ellipsis
 
-In *gmlSEM*, you can use ellipsis `...` to avoid writing a long sequence of variables whenever it make sense. For example in *gmlSEM* syntax, `y1,...,y5` is a short version of y1, y2, y3, y4, y5 and `y1+...+y5` is a short version of y1+y2+y3+y4+y5. Also `y1a+...+y5a` is the short version of y1a+y2a+y3a+y4a+y5a, and `y1a,...,y1e` is a short version of y1a, y1b, y1c, y1d, y1e. In a *gmlSEM* model, `...` simply will be replaced by the missed part of the sequence. The parser is moderately smart, and you can use ellipsis to abridge any sequence whose template is easy to infer. If it helps, you can add the first two elements of the sequence to let the parser infer the whole sequence. For example `y2,y4,...,y10` is a short version of y2, y4, y6, y8, y10, and `y11,y12,...,y112` is the short version of y11, y12, y13, y14, y15, y16, y17, y18, y19, y110, y111, y112, and `y1a,y2b,...,y5e` is the short version of y1a, y2b, y3c, y4d, y5e. To ensure that the parser understood you well, you can print the digested syntax with `syntax(model,ellipsis.expand=TRUE)`.
+In *gmlSEM*, you can use ellipsis `...` to avoid writing a long sequence of variables whenever it make sense. For example in *gmlSEM* syntax, `y1,...,y5` is a shorthand for y1, y2, y3, y4, y5 and `y1+...+y5` is a shorthand for y1+y2+y3+y4+y5. Using ellipsis make your code clear and easy to understand. You can also write more complex sequences like `y1a+...+y5a` which is the short version of y1a+y2a+y3a+y4a+y5a, and `y1a,...,y1e` which is the short version of y1a, y1b, y1c, y1d, y1e and `y1a,y2b,...,y5e` is the short version of y1a, y2b, y3c, y4d, y5e. In a *gmlSEM* model, `...` simply will be replaced by the missing part of the sequence. The parser will understand the fixed parts and varying parts in sybmols, and generates the whole sequence by creating sequencies of numbers or alphabets with proper increments. Accordingly, you can use ellipsis to abridge any sequence whose template is easy to infer. If it helps, you can add the first two elements of the sequence to let the parser infer the increment size of the elements in the sequence. For example `y2,y4,...,y10` is a shorthand for y2, y4, y6, y8, y10. Consider that `y11,y12,...,y112` is a shrothand for a sequence of length 102. If you intend to write the sequence y11, y12, y13, y14, y15, y16, y17, y18, y19, y110, y111, y112 using ellipsis, you can write it as `y1.1,.,y1.12`. *gmlSEM* will drop dots from the name of variables and will look for new names in the data, if the original names can not be found in the data-set. Adding dots to the name of variables will help you to write more complex sequences using ellipsis. To ensure that the parser well understood your code, You can print the digested syntax with `syntax(model,expand.ellipsis=TRUE)`.
 
-In the case of using ellipsis in the syntax, you can use the same convention to name the parameters,
+In the case of using ellipsis in the *gmlSEM* syntax, you can use the same convention to name the parameters,
 
 ::: {#exm-ellipsis2}
 ## Labeling parameters using ellipsis
@@ -372,19 +372,12 @@ You can also use copula functions to induce conditional dependency between diffe
 :::
 
 ::: callout-note
-A Gaussian family with identity link function accompanied by a Gaussian copula is equivalent to the multivariate normal distribution for the set of variables. When a Gaussian copula is added in the `family:` command, all pairwise conditional covariances are free to estimate unless you use `~~` operator to set some parameters equal to zero or another constant value like:
+A Gaussian family with identity link function accompanied by a Gaussian copula is equivalent to the multivariate normal distribution for the set of variables. When a Gaussian copula is added in the `family:` command, all pairwise conditional covariances are still zero unless you use `~~` operator to set some parameters free or equal to a constant value like:
 
     model<-'family: y1, y2, ..., y5 binomial(link="logit") copula(type="gaussian")
              
             eta1 =~ y1 + ... + y5
-            y1 ~~ 0*y2'
-
-You can also set the free parameters equal to zero by default in the copula term, and use the \~\~ operator to specify those conditional covariances that should be estimated
-
-    model<-'family: y1, y2, ..., y5 binomial(link="logit") copula(type="gaussian",covariance=0)
-             
-             eta1 =~ y1 + ... + y5
-             y1 ~~ y2+...+y5'
+            y1 ~~ y2'
 
 A binomial family accompanied with a Gaussian copula will result in another good modification to the model. See `?gmlSEM::copula` to learn more.
 :::
@@ -393,7 +386,7 @@ A binomial family accompanied with a Gaussian copula will result in another good
 
 ### Default specification of copula function in *gmlSEM*
 
-specifying a copula function in the family block is optional. If you specify conditional dependency between variables vary at the same level by using `~~` operator, *gmlSEM* will consider a Gaussian copula function by default to induce the corresponding conditional dependency if you do not explicitly specify the copula function in a `family:` block.
+specifying a copula function in the family block is optional. If you specify conditional dependency between variables vary at the same level by using `~~` operator, *gmlSEM* will consider a *Gaussian* copula function by default to induce the corresponding conditional dependency if you do not explicitly specify the copula function in a `family:` block.
 
 :::
 
@@ -481,8 +474,10 @@ As we noted before, the *gmlSEM* syntax helps you to define levels in your model
 
     See `?gmlSEM::family` to learn more.
 
-2.  Latent variables have zero mean by default if their mean is not fixed to another value by introducing a constraints. Hence, in the regression models with a latent variable does not have an intercept by default. On the other hand, *gmlSEM* includes intercept in the regression model with observed endogenous variables as response. You can change the default by explicitly including or excluding the intercept in a regression model.
+2.  In *gmlSEM* everthing relevant to the distribution is described in the `family:` block. Thus, scaling factor operator `~*~` is ommited from *gmlSEM* syntax.
 
-3.  As in *lavaan*, you can use label(.), equal(.), and start(.) modifiers with pre-multiplication mechanism. you can also use any other functions which gives a sensible scalar or vector result (for multiple group analysis).
+3.  Latent variables have zero mean by default if their mean is not fixed to another value by introducing a constraints. Hence, in the regression models with a latent variable does not have an intercept by default. On the other hand, *gmlSEM* includes intercept in the regression model with observed endogenous variables as response. You can change the default by explicitly including or excluding the intercept in a regression model.
 
-4.  You can extend the family of distributions in *gmlSEM* to fit your needs. However at this stage, you have to define your new family of distributions in the *c language*. To learn how you can define your own family of distribution and use it in *gmlSEM* see `?gmlSEM::extend`.
+4.  As in *lavaan*, you can use label(.), equal(.), and start(.) modifiers with pre-multiplication mechanism. When using equal(.) function to constraint parameters, consider that *mglSEM* use the same naming conventions as in lavaan. When fixing parameters using pre-multiplication mechanism, you can use any other functions in R which gives a sensible scalar or vector result (in multiple group analysis).
+
+5.  You can extend the family of distributions in *gmlSEM* to meet your needs. *gmlSEM* at its heart written in pure *c language* for fast computation. Hence, you need to define your new family of distributions in the *c language* according to the guideline. To learn how to define your own family of distributions and use them in *gmlSEM* see `?gmlSEM::extend`.

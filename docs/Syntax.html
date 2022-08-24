@@ -91,8 +91,8 @@ div.csl-indent {
 <p>During this tutorial, we use <code>gmlSEM::AttitudeDataset</code>. It is a simulated data in which the attitude of students is recorded in variables a1,…,a5 and the performance of students in three major courses are recorded as p1, p2, p3. The subjects are clustered in classes within schools, and the school id and class id for each subject are specified in variables <em>school</em> and <em>class</em>.</p>
 <section id="ellipsis" class="level3" data-number="2.1">
 <h3 data-number="2.1" class="anchored" data-anchor-id="ellipsis"><span class="header-section-number">2.1</span> Ellipsis</h3>
-<p>In <em>gmlSEM</em>, you can use ellipsis <code>...</code> to avoid writing a long sequence of variables whenever it make sense. For example in <em>gmlSEM</em> syntax, <code>y1,...,y5</code> is a short version of y1, y2, y3, y4, y5 and <code>y1+...+y5</code> is a short version of y1+y2+y3+y4+y5. Also <code>y1a+...+y5a</code> is the short version of y1a+y2a+y3a+y4a+y5a, and <code>y1a,...,y1e</code> is a short version of y1a, y1b, y1c, y1d, y1e. In a <em>gmlSEM</em> model, <code>...</code> simply will be replaced by the missed part of the sequence. The parser is moderately smart, and you can use ellipsis to abridge any sequence whose template is easy to infer. If it helps, you can add the first two elements of the sequence to let the parser infer the whole sequence. For example <code>y2,y4,...,y10</code> is a short version of y2, y4, y6, y8, y10, and <code>y11,y12,...,y112</code> is the short version of y11, y12, y13, y14, y15, y16, y17, y18, y19, y110, y111, y112, and <code>y1a,y2b,...,y5e</code> is the short version of y1a, y2b, y3c, y4d, y5e. To ensure that the parser understood you well, you can print the digested syntax with <code>syntax(model,ellipsis.expand=TRUE)</code>.</p>
-<p>In the case of using ellipsis in the syntax, you can use the same convention to name the parameters,</p>
+<p>In <em>gmlSEM</em>, you can use ellipsis <code>...</code> to avoid writing a long sequence of variables whenever it make sense. For example in <em>gmlSEM</em> syntax, <code>y1,...,y5</code> is a shorthand for y1, y2, y3, y4, y5 and <code>y1+...+y5</code> is a shorthand for y1+y2+y3+y4+y5. Using ellipsis make your code clear and easy to understand. You can also write more complex sequences like <code>y1a+...+y5a</code> which is the short version of y1a+y2a+y3a+y4a+y5a, and <code>y1a,...,y1e</code> which is the short version of y1a, y1b, y1c, y1d, y1e and <code>y1a,y2b,...,y5e</code> is the short version of y1a, y2b, y3c, y4d, y5e. In a <em>gmlSEM</em> model, <code>...</code> simply will be replaced by the missing part of the sequence. The parser will understand the fixed parts and varying parts in sybmols, and generates the whole sequence by creating sequencies of numbers or alphabets with proper increments. Accordingly, you can use ellipsis to abridge any sequence whose template is easy to infer. If it helps, you can add the first two elements of the sequence to let the parser infer the increment size of the elements in the sequence. For example <code>y2,y4,...,y10</code> is a shorthand for y2, y4, y6, y8, y10. Consider that <code>y11,y12,...,y112</code> is a shrothand for a sequence of length 102. If you intend to write the sequence y11, y12, y13, y14, y15, y16, y17, y18, y19, y110, y111, y112 using ellipsis, you can write it as <code>y1.1,.,y1.12</code>. <em>gmlSEM</em> will drop dots from the name of variables and will look for new names in the data, if the original names can not be found in the data-set. Adding dots to the name of variables will help you to write more complex sequences using ellipsis. To ensure that the parser well understood your code, You can print the digested syntax with <code>syntax(model,expand.ellipsis=TRUE)</code>.</p>
+<p>In the case of using ellipsis in the <em>gmlSEM</em> syntax, you can use the same convention to name the parameters,</p>
 <div id="exm-ellipsis2" class="theorem example">
 <p><span class="theorem-title"><strong>Example 1 (Labeling parameters using ellipsis) </strong></span></p>
 <pre><code>model&lt;-'at  =~ lambda1*a1 + ... + lambda5*a5'</code></pre>
@@ -444,16 +444,11 @@ Note
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p>A Gaussian family with identity link function accompanied by a Gaussian copula is equivalent to the multivariate normal distribution for the set of variables. When a Gaussian copula is added in the <code>family:</code> command, all pairwise conditional covariances are free to estimate unless you use <code>~~</code> operator to set some parameters equal to zero or another constant value like:</p>
+<p>A Gaussian family with identity link function accompanied by a Gaussian copula is equivalent to the multivariate normal distribution for the set of variables. When a Gaussian copula is added in the <code>family:</code> command, all pairwise conditional covariances are still zero unless you use <code>~~</code> operator to set some parameters free or equal to a constant value like:</p>
 <pre><code>model&lt;-'family: y1, y2, ..., y5 binomial(link="logit") copula(type="gaussian")
          
         eta1 =~ y1 + ... + y5
-        y1 ~~ 0*y2'</code></pre>
-<p>You can also set the free parameters equal to zero by default in the copula term, and use the ~~ operator to specify those conditional covariances that should be estimated</p>
-<pre><code>model&lt;-'family: y1, y2, ..., y5 binomial(link="logit") copula(type="gaussian",covariance=0)
-         
-         eta1 =~ y1 + ... + y5
-         y1 ~~ y2+...+y5'</code></pre>
+        y1 ~~ y2'</code></pre>
 <p>A binomial family accompanied with a Gaussian copula will result in another good modification to the model. See <code>?gmlSEM::copula</code> to learn more.</p>
 </div>
 </div>
@@ -467,7 +462,7 @@ Default specification of copula function in <em>gmlSEM</em>
 </div>
 </div>
 <div class="callout-body-container callout-body">
-<p>specifying a copula function in the family block is optional. If you specify conditional dependency between variables vary at the same level by using <code>~~</code> operator, <em>gmlSEM</em> will consider a Gaussian copula function by default to induce the corresponding conditional dependency if you do not explicitly specify the copula function in a <code>family:</code> block.</p>
+<p>specifying a copula function in the family block is optional. If you specify conditional dependency between variables vary at the same level by using <code>~~</code> operator, <em>gmlSEM</em> will consider a <em>Gaussian</em> copula function by default to induce the corresponding conditional dependency if you do not explicitly specify the copula function in a <code>family:</code> block.</p>
 </div>
 </div>
 </section>
@@ -548,9 +543,10 @@ gmlsem&lt;-gmlSEM(model,AttitudeData)</code></pre>
 <li><p>In <em>gmlSEM</em> the <code>|</code> operator is only used within parenthesis on the right hand side of a regression model to define random effects as you do in <code>lme3::lmer</code>. In <em>lavaan</em> this operator helps you to define thresholds for the categorical endogenous variables. In <em>gmlSEM</em> you will define nominal and categorical random variables in the family: block such as</p>
 <pre><code>family: y ordinal(levels=c(1,2,3,4),thresholds=c(0,NA,NA),latent.family=Gaussian())</code></pre>
 <p>See <code>?gmlSEM::family</code> to learn more.</p></li>
+<li><p>In <em>gmlSEM</em> everthing relevant to the distribution is described in the <code>family:</code> block. Thus, scaling factor operator <code>~*~</code> is ommited from <em>gmlSEM</em> syntax.</p></li>
 <li><p>Latent variables have zero mean by default if their mean is not fixed to another value by introducing a constraints. Hence, in the regression models with a latent variable does not have an intercept by default. On the other hand, <em>gmlSEM</em> includes intercept in the regression model with observed endogenous variables as response. You can change the default by explicitly including or excluding the intercept in a regression model.</p></li>
-<li><p>As in <em>lavaan</em>, you can use label(.), equal(.), and start(.) modifiers with pre-multiplication mechanism. you can also use any other functions which gives a sensible scalar or vector result (for multiple group analysis).</p></li>
-<li><p>You can extend the family of distributions in <em>gmlSEM</em> to fit your needs. However at this stage, you have to define your new family of distributions in the <em>c language</em>. To learn how you can define your own family of distribution and use it in <em>gmlSEM</em> see <code>?gmlSEM::extend</code>.</p></li>
+<li><p>As in <em>lavaan</em>, you can use label(.), equal(.), and start(.) modifiers with pre-multiplication mechanism. When using equal(.) function to constraint parameters, consider that <em>mglSEM</em> use the same naming conventions as in lavaan. When fixing parameters using pre-multiplication mechanism, you can use any other functions in R which gives a sensible scalar or vector result (in multiple group analysis).</p></li>
+<li><p>You can extend the family of distributions in <em>gmlSEM</em> to meet your needs. <em>gmlSEM</em> at its heart written in pure <em>c language</em> for fast computation. Hence, you need to define your new family of distributions in the <em>c language</em> according to the guideline. To learn how to define your own family of distributions and use them in <em>gmlSEM</em> see <code>?gmlSEM::extend</code>.</p></li>
 </ol>
 
 </section>
