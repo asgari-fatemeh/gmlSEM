@@ -1,2 +1,2 @@
 # mlgSEM
-Multi-Level Generalized SEM
+A Multi-Level Multi-Group Generalized SEM interface for R
