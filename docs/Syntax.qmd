@@ -212,14 +212,12 @@ In a Multi-Level model in *gmlSEM*, you have to note that
 -   In a measurement model, the latent variable must vary at the same level or a higher level than the indicators.
 :::
 
-:::{.callout-note}
-
+::: callout-note
 #### Level's name
 
 You can use different names for labeling the levels other than the name of the variables specifying them in the data-set. If the variable's name is different form the level's name you can specify the variable's name inside a parenthesis in front of the level's name in the `level:` block e.g. `level: class(ClassID)`. This simply make *class* and *ClassID* aliases. You can also give a name to the first level with `level: BaseLevelName(1)`. A full example is:
 
     level: Student(1) within Class(ClassID) within School(SchoolID)
-
 :::
 
 ::: callout-note
@@ -316,7 +314,7 @@ If the chosen family distribution for an observed response variable or a latent 
 
 In the @exm-exam-heter, the first line in both codes introduce a '*level: class*' to the model, however in the code we have not introduced any variable that vary at the level '*class*'. The advantage of using the '*level: class'* is to say to the *gmlSEM* that the variable class is a factor even if it is not of a type factor in the data.
 
-#### Copula  {#sec-copula}
+#### Copula {#sec-copula}
 
 When defining the family of distribution for a set of variables, you can also take advantage of copula functions to induce the conditional dependency between variables:
 
@@ -382,12 +380,10 @@ A Gaussian family with identity link function accompanied by a Gaussian copula i
 A binomial family accompanied with a Gaussian copula will result in another good modification to the model. See `?gmlSEM::copula` to learn more.
 :::
 
-:::{.callout-note}
-
+::: callout-note
 ### Default specification of copula function in *gmlSEM*
 
 specifying a copula function in the family block is optional. If you specify conditional dependency between variables vary at the same level by using `~~` operator, *gmlSEM* will consider a *Gaussian* copula function by default to induce the corresponding conditional dependency if you do not explicitly specify the copula function in a `family:` block.
-
 :::
 
 #### Forget unique factors
