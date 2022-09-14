@@ -489,8 +489,10 @@ expand.ellipsis<-function(txt,multiple=FALSE,ignore.first=FALSE,details=FALSE){
                    paste0(.tx,collapse = ","),"\n",
                    paste0(.tx.amb,collapse = ",")))
     }
+    lentx=len(tx)
     tx=paste0(tx,collapse = ",")
     
+    attr(tx,"len")=lentx
     return(tx)
     
   }
@@ -726,7 +728,7 @@ expand.ellipsis<-function(txt,multiple=FALSE,ignore.first=FALSE,details=FALSE){
   
   #if(multiple)
   #  return(strsplit(txt,sep))
-  
+  attr(txt,"len")=len(seqq)
   return(txt)
   
 }
