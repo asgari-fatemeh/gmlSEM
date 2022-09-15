@@ -1,3 +1,9 @@
+# Dose not properly support error handling as in:
+# sam8 = '(x11,x12) for (y11,y12),(x21,x22) for (y11,y12),...,(x81,x82) for (y81,y82)' 
+# sam9 = '(x11,x12 for y11,y12),(x21,x22 for y21,y22),...,(x81,x82 for y81,y82)' 
+# expand.ellipsis(sam8)
+# expand.ellipsis(sam9)
+
 "%+%"<-function(a,b){paste0(a,b)}
 trim <- function (x) gsub("^\\s+|\\s+$", "", x)
 
@@ -229,8 +235,9 @@ expand.ellipsis<-function(txt,multiple=FALSE,ignore.first=FALSE,details=FALSE){
   
   return.longest.possbile=TRUE  #Change it to FALSE if you want the shortest possible match
   
-  latent.keyword="=>|->|as|=~|=|~"
+  latent.keywords="=>|->|for|as|=~|=|~|^"
   # keyword to introduce latents
+  # x1 as (z1,y1),...,x9 as (z9,y9)      #zero-inflated distribution 
   # (x11,x12,x13) as y1,...,(x91,x92,x93) as y9
   # (x11,x12,x13) as (y11,y12),...,(x91,x92,x93) as (y91,y92)
   # (x11,x12,x13) -> y1,...,(x91,x92,x93) -> y9
@@ -244,23 +251,35 @@ expand.ellipsis<-function(txt,multiple=FALSE,ignore.first=FALSE,details=FALSE){
   # (...) as (...)
   # (... as ...)
   
-  varPat="(?:(?:[\\w\\.][\\w\\._]*\\s*,\\s*)*[\\w\\.][\\w\\._]*)"
-  latpats=sprintf(c("(%1$s)\\s*%2$s\\s*(%1$s)",
-                    "\\((%1$s)\\)\\s*%2$s\\s*(%1$s)",
-                    "\\((%1$s)\\)\\s*%2$s\\s*\\((%1$s)\\)",
-                    "\\((%1$s)\\)\\s*%2$s\\s*\\((%1$s)\\)",
-                    "\\((%1$s)\\s*%2$s\\s*(%1$s)\\)"),varPat,"%1$s")
+  varPat="(?:(?:[\\w\\.][\\w\\._]*\\s*,\\s*)*[\\w\\.][\\w\\._]*)"     #Variable Pattern
+  elem.place.holders=c(                                               #General Place holder patterns
+                       "\\(%1$s\\)",                                #First pattern represents only a vector, i.e. without latent naming conventions
+                       "(%4$s%1$s)\\s*%2$s\\s*(%4$s%3$s)",                #Next patterns match to latent naming conventions
+                       "\\((%4$s%1$s)\\)\\s*%2$s\\s*(%4$s%3$s)", 
+                       "(%4$s%1$s)\\s*%2$s\\s*\\((%4$s%3$s)\\)", 
+                       "\\((%4$s%1$s)\\)\\s*%2$s\\s*\\((%4$s%3$s)\\)",
+                       "\\((%4$s%1$s)\\s*%2$s\\s*(%4$s%3$s)\\)")
+  
+  
+  elem.place.holders.capture=sprintf(elem.place.holders,"%1$s","%2$s","%3$s","")
+  elem.place.holders.nocapture=sprintf(elem.place.holders,"%1$s","%2$s","%3$s","?:")
+  
+
+  latPat0=sprintf(elem.place.holders.nocapture,varPat,"%1$s",varPat)
+  latPat=sprintf(elem.place.holders.capture,varPat,"%1$s",varPat)             #Latent definition patterns
   
   
   #Add parantheses around the pattern to capture the exact keyword in the text
-  latent.keyword.capture="("%+%latent.keyword%+%")"
+  latent.keywords.capture="("%+%latent.keywords%+%")"
+  latent.keywords.nocapture="(?:"%+%latent.keywords%+%")"
+  
+  
   
   
   txt.org<-txt
   if(!grepl("...",txt,fixed=TRUE)){
     return(txt)
   }
-  txt<-gsub("\\s","",txt,perl=TRUE)
   sep=""
   grp<-gregexpr("(?'sep'[,\\+\\*/])?\\s*\\.\\.\\.\\s*\\k'sep'",txt,perl=TRUE)
   capture.start<-attr(grp[[1]],"capture.start")
@@ -303,19 +322,6 @@ expand.ellipsis<-function(txt,multiple=FALSE,ignore.first=FALSE,details=FALSE){
   
   txt=gsub("\\s+"," ",txt,perl=TRUE)
   
-  #gmlSEM accepts 4 types of ellipsis
-  #The first three types has the following patterns and exists in family: block statements
-  # (x1.1,x1.2,x1.3),...,(x9.1,x9.2,x9.3)
-  # (x11,x12,x13) as y1,...,(x91,x92,x93) as y9
-  # (x11,x12,x13) as (y11,y12),...,(x91,x92,x93) as (y91,y92)
-  
-  # The function supress details=TRUE and ignores returning the details, if the template is complicated
-  pat00=sprintf(sprintf("(?:^|\\n)\\s*%1$s(?:\\s*,\\s*%1$s)*(?:\\n|$)",latpats),latent.keyword.capture)
-  pat01=sprintf("(?:^|\\n)\\s*(?:\\([,\\.\\w\\s]+\\)(?!\\s*%1$s)(?:,)\\s*)?\\([,\\.\\w\\s]+\\)(?!\\s*%1$s)\\s*(?:,)\\s*\\.\\.\\.\\s*(?:,)\\s*\\([,\\.\\w\\s]+\\)(?!\\s*%1$s)(?:\\n|$)",latent.keyword.capture)
-  pat02=sprintf("(?:^|\\n)\\s*(?:\\([,\\.\\w\\s]+\\)\\s*%1$s\\s*[\\w\\.]+\\s*(?:,)\\s*)?\\([,\\.\\w\\s]+\\)\\s*%1$s\\s*[\\w\\.]+\\s*(?:,)\\s*\\.\\.\\.\\s*(?:,)\\s*\\([,\\.\\w\\s]+\\)\\s*%1$s\\s*[\\w\\.]+(?:\\n|$)",latent.keyword.capture)
-  pat03=sprintf("(?:^|\\n)\\s*(?:\\([,\\.\\w\\s]+\\)\\s*%1$s\\s*\\([,\\.\\w\\s]+\\)\\s*(?:,)\\s*)?\\([,\\.\\w\\s]+\\)\\s*%1$s\\s*\\([,\\.\\w\\s]+\\)\\s*(?:,)\\s*\\.\\.\\.\\s*(?:,)\\s*\\([,\\.\\w\\s]+\\)\\s*%1$s\\s*\\([,\\.\\w\\s]+\\)(?:\\n|$)",latent.keyword.capture)
-  
-  
   perlsplit<-function(x,pat,drop.captured.sgroups.only=TRUE){
     #expect just one match
     if(!grepl(pat,x,perl=TRUE))
@@ -328,6 +334,17 @@ expand.ellipsis<-function(txt,multiple=FALSE,ignore.first=FALSE,details=FALSE){
     
     cap.start=attr(text,"capture.start")
     cap.len=attr(text,"capture.length")
+    
+    emptInds=rowSums(cap.start)==0 | rowSums(cap.len)==0
+    
+    cap.start =  cap.start[!emptInds,]
+    cap.len   =    cap.len[!emptInds,]
+    
+    if(is.null(dim(cap.start))){
+      cap.start=matrix(cap.start,nrow=1)
+      cap.len=matrix(cap.len,nrow=1)
+    }
+      
     if(nrow(cap.start)>1)
       stopp()
     
@@ -338,7 +355,7 @@ expand.ellipsis<-function(txt,multiple=FALSE,ignore.first=FALSE,details=FALSE){
       if(cap.len[i]==0)
         next
       txtt[j]=substr(x,st,cap.start[i]-1)
-      st=cap.start[i]+1
+      st=cap.start[i]+cap.len[i]
       j=j+1
     }
     if(st<=nchar(x))
@@ -347,41 +364,63 @@ expand.ellipsis<-function(txt,multiple=FALSE,ignore.first=FALSE,details=FALSE){
     txtt
   }
   
-  p1m=grepl(pat01,txt,perl = TRUE)
-  p2m=grepl(pat02,txt,perl = TRUE)
-  p3m=grepl(pat03,txt,perl = TRUE)
+  #gmlSEM accepts 4 types of ellipsis
+  #The first three types has the following patterns and exists in family: block statements
+  # (x1.1,x1.2,x1.3),...,(x9.1,x9.2,x9.3)
+  # (x11,x12,x13) as y1,...,(x91,x92,x93) as y9
+  # (x11,x12,x13) as (y11,y12),...,(x91,x92,x93) as (y91,y92)
+  
+  # The function supress details=TRUE and ignores returning the details, if the template is complicated
+  # pat00=sprintf(sprintf("(?:^|\\n)\\s*%1$s(?:\\s*,\\s*%1$s)*(?:\\n|$)",latpats),latent.keyword.capture)
+  # pat01=sprintf("(?:^|\\n)\\s*(?:\\([,\\.\\w\\s]+\\)(?!\\s*%1$s)(?:,)\\s*)?\\([,\\.\\w\\s]+\\)(?!\\s*%1$s)\\s*(?:,)\\s*\\.\\.\\.\\s*(?:,)\\s*\\([,\\.\\w\\s]+\\)(?!\\s*%1$s)(?:\\n|$)",latent.keyword.capture)
+  # pat02=sprintf("(?:^|\\n)\\s*(?:\\([,\\.\\w\\s]+\\)\\s*%1$s\\s*[\\w\\.]+\\s*(?:,)\\s*)?\\([,\\.\\w\\s]+\\)\\s*%1$s\\s*[\\w\\.]+\\s*(?:,)\\s*\\.\\.\\.\\s*(?:,)\\s*\\([,\\.\\w\\s]+\\)\\s*%1$s\\s*[\\w\\.]+(?:\\n|$)",latent.keyword.capture)
+  # pat03=sprintf("(?:^|\\n)\\s*(?:\\([,\\.\\w\\s]+\\)\\s*%1$s\\s*\\([,\\.\\w\\s]+\\)\\s*(?:,)\\s*)?\\([,\\.\\w\\s]+\\)\\s*%1$s\\s*\\([,\\.\\w\\s]+\\)\\s*(?:,)\\s*\\.\\.\\.\\s*(?:,)\\s*\\([,\\.\\w\\s]+\\)\\s*%1$s\\s*\\([,\\.\\w\\s]+\\)(?:\\n|$)",latent.keyword.capture)
+  
+  elem.pat0=paste0("\\s*",sprintf(latPat0,latent.keywords.nocapture),"\\s*")
+  elem.pat0.flatten=paste0("(?:",paste0("(?:",elem.pat0,")"),")")
+  seq.pat0=sprintf("(?:%1$s\\s*(?:\\s*(,)\\s*%1$s)*\\s*(,)\\s*\\.\\.\\.\\s*(,)\\s*%1$s\\s*(?:\\s*(,)\\s*%1$s\\s*)*)|(?:%1$s\\s*(?:\\s*(,)\\s*%1$s)*\\s*)|\\s*(?:%1$s)\\s*",elem.pat0.flatten)
+  pats0=paste0("(?:^|\\n)(?:\\s*",seq.pat0,"\\s*)(?:\\n|$)")
   
   
-  if(p1m||p2m||p3m){
+  
+  pm=sapply(pats0, function(p)grepl(p,txt,perl=TRUE))
+  
+  
+  if(any(pm)){
+    pmi=which(pm)[1]
     
-    getKeyWord=function(pat){
+    getKeyWord=function(pat,txt){
       res=gregexpr(pat,txt,perl=TRUE)[[1]]
-      c.s=attr(res,"capture.start")[2]
-      c.l=attr(res,"capture.length")[2]
+      c.s=attr(res,"capture.start")
+      c.l=attr(res,"capture.length")
+      em1=c.s!=0 & c.l!=0
+      c.s=c.s[em1]
+      c.l[em1]=c.l[em1]
       substr(txt,c.s,c.s+c.l-1)
     }
     
-    text=if(p1m){
-      perlsplit(txt,pat1)
-    }else if(p2m){
-      latent.keyword=getKeyWord(pat02)
-      latent.keyword.nocapture="(?:"%+%latent.keyword%+%")"
-      latpats=sprintf(latpats,latent.keyword.nocapture)
-      pat2=sprintf("(?:^|\\n)\\s*(?:\\([,\\.\\w\\s]+\\)\\s*%1$s\\s*[\\w\\.]+\\s*(,)\\s*)?\\([,\\.\\w\\s]+\\)\\s*%1$s\\s*[\\w\\.]+\\s*(,)\\s*\\.\\.\\.\\s*(,)\\s*\\([,\\.\\w\\s]+\\)\\s*%1$s\\s*[\\w\\.]+(?:\\n|$)",latent.keyword.nocapture)
-      perlsplit(txt,pat2)
+    text=if(pm[1]){
+      # (...) vector without latent naming conventions
+      if(!grepl("...",txt,fixed = TRUE)) #No ...
+        return(txt)
+      
+      perlsplit(txt,pats0[1])
     }else{
-      latent.keyword=getKeyWord(pat03)
-      latent.keyword.nocapture="(?:"%+%latent.keyword%+%")"
-      pat3=sprintf("(?:^|\\n)\\s*(?:\\([,\\.\\w\\s]+\\)\\s*%1$s\\s*\\([,\\.\\w\\s]+\\)\\s*(,)\\s*)?\\([,\\.\\w\\s]+\\)\\s*%1$s\\s*\\([,\\.\\w\\s]+\\)\\s*(,)\\s*\\.\\.\\.\\s*(,)\\s*\\([,\\.\\w\\s]+\\)\\s*%1$s\\s*\\([,\\.\\w\\s]+\\)(?:\\n|$)",latent.keyword.nocapture)
-      perlsplit(txt,pat3)
+      pmi=which(pm)[1]
+      perlsplit(txt,pats0[pmi])
     }
     
     
-    if(p1m){
-      n1=length(strsplit(text,",")[[1]])
+    if(pm[1]){
+      n1=length(strsplit(text[1],",")[[1]])
       n2=0
     }else{
-      txt0=strsplit(text[1],"(?:\\s+|\\))as(?:\\s+|\\()",perl=TRUE)[[1]]
+      latPatKeywordIdent=sprintf(latPat0[pmi],latent.keywords.capture)
+      latent.keyword=getKeyWord(latPatKeywordIdent,text[1])
+      latent.keyword.nocapture="(?:"%+%latent.keyword%+%")"
+      latent.keyword.capture="("%+%latent.keyword%+%")"
+      
+      txt0=perlsplit(text[1],latPatKeywordIdent)
       n1=length(strsplit(txt0[1],",")[[1]])
       n2=length(strsplit(txt0[2],",")[[1]])  
     }
@@ -393,7 +432,11 @@ expand.ellipsis<-function(txt,multiple=FALSE,ignore.first=FALSE,details=FALSE){
         txts[i,]="..."
         next
       }
-      txt1=gsub("(?:\\s+|\\))as(?:\\s+|\\()",",",txt1,perl = TRUE)
+      
+      if(pmi>1){
+        txt1=sapply(txt1, function(tx){xx=perlsplit(tx,latPatKeywordIdent);paste0(xx,collapse = ",")})        
+      }
+
       txt1=trim(gsub("\\s","",gsub(")","",gsub("(","",txt1,fixed = TRUE),fixed = TRUE)))
       txts[i,]=strsplit(txt1,",")[[1]]
     }
@@ -489,7 +532,7 @@ expand.ellipsis<-function(txt,multiple=FALSE,ignore.first=FALSE,details=FALSE){
                    paste0(.tx,collapse = ","),"\n",
                    paste0(.tx.amb,collapse = ",")))
     }
-    lentx=len(tx)
+    lentx=length(tx)
     tx=paste0(tx,collapse = ",")
     
     attr(tx,"len")=lentx
@@ -497,6 +540,7 @@ expand.ellipsis<-function(txt,multiple=FALSE,ignore.first=FALSE,details=FALSE){
     
   }
   
+  txt<-gsub("\\s","",txt,perl=TRUE)
   text<-strsplit(txt,sep,fixed = TRUE)[[1]]
   elems<-list()
   
@@ -728,7 +772,7 @@ expand.ellipsis<-function(txt,multiple=FALSE,ignore.first=FALSE,details=FALSE){
   
   #if(multiple)
   #  return(strsplit(txt,sep))
-  attr(txt,"len")=len(seqq)
+  attr(txt,"len")=length(seqq)
   return(txt)
   
 }
