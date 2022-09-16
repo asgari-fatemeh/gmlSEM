@@ -5,190 +5,24 @@ source("experimental/Parser_InternalEllipsis.R")
 source("experimental/Parser_InternalFamilyClass.R")
 source("experimental/Parser_InternalFamilyCollection.R")
 
+sample_syntax_file       = 'experimental/sample_gmlSEMScript.txt'
+fileName = 'experimental/sample_gmlSEMScript.txt'
+model.syntax      = readChar(sample_syntax_file, file.info(sample_syntax_file)$size)
+
+#sample_syntax_extra_file = 'experimental/sample_gmlSEMScript_extra.txt'
+#simulation.syntax = readChar(sample_syntax_extra_file, file.info(sample_syntax_extra_file)$size)
+#model.syntax<-paste0(model.syntax,"\n",simulation.syntax)
+
 ##Arguments
 #internal machinery
 data.is.provided = FALSE
-as.data.frame. = FALSE
-warn = TRUE
-debug = FALSE
-space.sub= "_______"
-tab.sub=   "-------"
 
-"%+%"<-function(a,b){paste0(a,b)}
-
-
-
-
-simulation.syntax ='
-#Simulation syntax is extra information which update the model
-level: student(1)
-size: 2 student in class 1, ...,2 student in class 10
-size: 10 school
-size: 3  class per     school
-size: 3  team  per     school
-size: 3  team  each    school
-size: 3  team  in each school
-size: 10 student per   class 
-size: A student per   class 
-size: 3  calss   in    school 1
-
-size: M school
-size: n  class per     school
-size: n2  team  per     school
-size: N student
-size: balanced class
-size: K Ethnic
-size: N/k Student in each Ethnic
-size: 40% student in  team 1, 60% Student in team 2
-
-size: M school,
-      n1  class per     school,
-      n2  team  per     school,
-      N student,
-      balanced class,
-      balanced team,
-      K Ethnic,
-      N/k Student in Ethnic 1, N/K Student in ethnic 2,
-      40% Student in team 1, 60% Student in team 2
-
-M = 10
-N = 100
-
-family: x binomial(n=1,p=0.5) 
- x ~ a + b*class
-beta1=4
-beta2=5'
-
-model.syntax = '!Maybe another comment
-                #Defining variable label
-                #Either fw or label can be referenced in the formula
-                group: gender(old=1,young=2)
-                
-                fw as forweekend
-                fz as  "forever zero"
-                fww as   vary at level
-                
-                #This is not and ambiguty for Parser
-                as as assure
-                assure as as as    # assure <> "as as"
-                assure as as       # asure <> as
-                as =~ x1 + x2 
-                
-                b1,...,b6 as beta1,...,beta6
-                y1,as,y2 as yyy1,yyy2,yyy3
-                z1,...,z10 as (y1=0),...,(y10=0)
-                
-                #Default families
-                family: y binomial(link="logit")
-                family: y1,...,y10 binomial(link="logit") copula(type="gaussian")
-                
-                #notation to support vector-valued distributions
-                #Potential syntax
-                family: (x1.1,x1.2,x1.3),...,(x9.1,x9.2,x9.3) ordered()
-                family: (x1.1,x1.2,x1.3) as y1,...,(x9.1,x9.2,x9.3) as y9 tobit(type=4)
-                family: (x1.1,x1.2,x1.3) as (y11,y12),...,(x9.1,x9.2,x9.3) as (y91,y92) tobit(type=4)
-                
-                family: z1,...,z5 binomial(link="logit")
-                family: z6,...,z10 binomial(link="logit")
-                family: z1,...,z10 copula(type="gaussian")
-                
-                family: fb zoib(link="logit")      #Produce a warning
-                family: fz zib(link=c("probit","logit"))
-                
-                #also
-                family: y1,...,y10
-                        binomial()
-                        copula()
-                
-                #Hierarchical cluster/MultiLevel SEM
-                level: school 
-                level: class within school
-                level: class within school within cities
-                
-                level: school(schoolID)
-                level: Class (classID) within School (SchoolID)
-                
-                # measurement model
-                fb,z         vary at level school
-                fw           varies at level class
-                y1,y2,y3     vary at level class
-                y1, ... ,y13 vary at level class
-                
-
-                ind60 =~ x1 + x2 + x3 
-                dem60 =~ y1 + 1*y2 + y3 + y4       
-                dem60 =~ y1 + ... + y4           
-                dem65 =~ y5 + y6 + y7 + y8
-                
-                # regressions
-                dem60 ~ center(ind60) + beta1*s(x1,bs=NULL)
-                dem60 ~ center(ind60) + ind60
-                dem65 ~ ind60 + dem60 + (b11*1 [as cc ]+ b1x* x[ as  cd]|class)
-                
-                dem60 ~ beta1*center(x1)+...+beta5*center(x5)
-                dem65 ~ beta1*center(x1)+beta1*center(x2)+...+beta1*center(x5)
-                ind60 ~ beta1*center(x1)+beta2*center(x2)+...+beta5*center(x5)
-                
-                #Multiple ellipses in the regression block
-                y ~ x1+x3+...+x9+y1+...+y9+(x1+...+x9|class)+(a11*x1[as rx1]+...+a19*x9[as rx9]|class)
-
-                #Heteroskedasticity
-                heter: y ~ x1 + x2
-                
-                # residual (co)variances
-                y1 ~~ y5
-                y2 ~~ y4 + y6
-                y3 ~~ y7
-                y4 ~~ y8
-                y6 ~~ y8
-                dem65 ~~ 1*dem65 #fix variance eq. 1
-                
-                # intercepts
-                y1 ~ 1
-                f1 ~ 1
-                
-                
-                # model with labeled parameters
-                y ~ b1*x1 + b2*x2 + b3*x3
-                z ~ b1*x1 + ... + b5*x5
-                
-                # constraints
-                b1 == (b2 + b3)^2
-                b1 > exp(b2 + b3 + ... + b9)
-                
-                ## Define and monitor new params
-                # indirect effect (a*b)
-                ab := a*b
-                # total effect
-                total := c + (a*b)
-                
-                
-                ##Multiple Group, adding argument group = "school", group.equal = c("loadings", "intercepts"), 
-                ## except group.partial = c("visual=~x2", "x7~1"))
-                visual =~ x1 + 0.5*x2 + c(0.6, 0.8)*x3 + c(0.1,NA)*x4
-                textual =~ x4 + start(c(1.2, 0.6))*x5 + c(a1, a2)*x6
-                speed =~ x7 + x8 + x9 
-
-                
-                #size: is a block used for simulation purpose only
-                #Syntax=> size: param level (in level param  | (per|each|in each) level)
-                size: 10 school
-                size: 3  class per     school
-                size: 3  team  per     school
-                size: 3  team  each    school
-                size: 3  team  in each school
-                size: 10 student per   class 
-                size: 3  calss   in    school 1
-                '
-
-model.syntax<-paste0(model.syntax,"\n",simulation.syntax)
 #############################################################
 ##################### Parser Code ###########################
 
-
 # check for empty syntax
 if(length(model.syntax) == 0) {
-  stop("lavaan ERROR: empty model syntax")
+  stop("gmlSEM ERROR: empty model syntax")
 }
 
 # remove comments prior to split:
@@ -343,8 +177,8 @@ model.syntax <- gsub("\n{2,}", "\n", model.syntax, perl = TRUE)
 model.syntax <- gsub(pattern = "\u02dc", replacement = "~", model.syntax)
 
 #Expanding three-dots
-#pattern<-"[\\w\\.][^:,\\+\\n\\b\\b\\<\\>~\\-]*(?'sep'[,\\+])(?:[^:,\\+\\n\\b\\b\\<\\>~\\|\\-]+\\k'sep')?\\.\\.\\.\\k'sep'[^:,\\+\\n\\b\\b\\<\\>~\\|\\-]*[\\w\\.]"
-pattern<-"(?J)(?>(?>(?>([^:,\\+\\n\\<\\>~\\-\\(\\)|]|(?'cond'\\|))*(?>\\((?>(?!\\.\\.\\.)([^:,\\+\\n\\<\\>~\\-\\(\\)|]|\\k'cond')|(?1))*\\))?){1,2})(?'sep'[,+]))?(?>(?>(?!\\.\\.\\.)([^:,\\+\\n\\<\\>~\\-\\(\\)|]|\\k'cond')*(?:\\((?>[^:,\\+\\n\\<\\>~\\-()|]|(?1))*\\))?){1,2})(?'sep'[,+])\\.\\.\\.\\k'sep'(?>(?>(?!\\.\\.\\.)[^:,\\+\\n\\<\\>~\\-\\(\\)|]*(?>\\((?>(?!\\.\\.\\.)([^:,\\+\\n\\<\\>~\\-\\(\\)|]|\\k'cond')|(?1))*\\))?){1,2})"
+#pattern = "[\\w\\.][^:,\\+\\n\\b\\b\\<\\>~\\-]*(?'sep'[,\\+])(?:[^:,\\+\\n\\b\\b\\<\\>~\\|\\-]+\\k'sep')?\\.\\.\\.\\k'sep'[^:,\\+\\n\\b\\b\\<\\>~\\|\\-]*[\\w\\.]"
+pattern  = "(?J)(?>(?>(?>([^:,\\+\\n\\<\\>~\\-\\(\\)|]|(?'cond'\\|))*(?>\\((?>(?!\\.\\.\\.)([^:,\\+\\n\\<\\>~\\-\\(\\)|]|\\k'cond')|(?1))*\\))?){1,2})(?'sep'[,+]))?(?>(?>(?!\\.\\.\\.)([^:,\\+\\n\\<\\>~\\-\\(\\)|]|\\k'cond')*(?:\\((?>[^:,\\+\\n\\<\\>~\\-()|]|(?1))*\\))?){1,2})(?'sep'[,+])\\.\\.\\.\\k'sep'(?>(?>(?!\\.\\.\\.)[^:,\\+\\n\\<\\>~\\-\\(\\)|]*(?>\\((?>(?!\\.\\.\\.)([^:,\\+\\n\\<\\>~\\-\\(\\)|]|\\k'cond')|(?1))*\\))?){1,2})"
 capture.ellipsis <- gregexpr(pattern, model.syntax, perl=TRUE,ignore.case =TRUE)
 match.start<-capture.ellipsis[[1]]
 match.length<-attr(capture.ellipsis[[1]],"match.length")

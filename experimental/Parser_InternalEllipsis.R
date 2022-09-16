@@ -235,7 +235,7 @@ expand.ellipsis<-function(txt,multiple=FALSE,ignore.first=FALSE,details=FALSE){
   
   return.longest.possbile=TRUE  #Change it to FALSE if you want the shortest possible match
   
-  latent.keywords="=>|->|for|as|=~|=|~|^"
+  latent.keywords="=>|->|for|as|=~|^"
   # keyword to introduce latents
   # x1 as (z1,y1),...,x9 as (z9,y9)      #zero-inflated distribution 
   # (x11,x12,x13) as y1,...,(x91,x92,x93) as y9
@@ -251,7 +251,7 @@ expand.ellipsis<-function(txt,multiple=FALSE,ignore.first=FALSE,details=FALSE){
   # (...) as (...)
   # (... as ...)
   
-  varPat="(?:(?:[\\w\\.][\\w\\._]*\\s*,\\s*)*[\\w\\.][\\w\\._]*)"     #Variable Pattern
+  varPat="(?:(?:[\\w\\.][\\w\\._=]*\\s*,\\s*)*[\\w\\.][\\w\\._=]*)"     #Variable Pattern
   elem.place.holders=c(                                               #General Place holder patterns
                        "\\(%1$s\\)",                                #First pattern represents only a vector, i.e. without latent naming conventions
                        "(%4$s%1$s)\\s*%2$s\\s*(%4$s%3$s)",                #Next patterns match to latent naming conventions
@@ -447,7 +447,7 @@ expand.ellipsis<-function(txt,multiple=FALSE,ignore.first=FALSE,details=FALSE){
     }
     
     lens1=sort(unique(unlist(lapply(res, function(r)if(r[[1]]$failed){NA}else{r[[1]]$lens}))))
-    lens2=sort(unique(unlist(lapply(res, function(r)if(r[[1]]$failed){NA}else{r[[2]]$lens}))))
+    lens2=sort(unique(unlist(lapply(res, function(r)if(r[[2]]$failed){NA}else{r[[2]]$lens}))))
     
     if(is.null(lens2)){
       lens2=c()
@@ -772,7 +772,19 @@ expand.ellipsis<-function(txt,multiple=FALSE,ignore.first=FALSE,details=FALSE){
   
   #if(multiple)
   #  return(strsplit(txt,sep))
-  attr(txt,"len")=length(seqq)
+  #attr(txt,"len")=length(seqq)
+  
+  if(details==TRUE &&grepl("...",txt,fixed = TRUE)){
+    stopp("The parser cannot expand ellipsis. Try to use a more simple syntax or avoid ambiguity!")
+  }
+  k=0
+  while(grepl("...",txt,fixed = TRUE)){
+    k=k+1
+    txt=expand.ellipsis(txt)
+    if(k>10)
+      stopp("The parser cannot expand ellipsis. Try to use a more simple syntax or avoid ambiguity!")
+  }
+  
   return(txt)
   
 }

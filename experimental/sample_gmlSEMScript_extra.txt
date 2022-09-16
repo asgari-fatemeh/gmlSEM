@@ -1,0 +1,38 @@
+#This simulation syntax extends the 'samplegmlSEMScript' with extra information which is needed for simulation purpose
+level: student(1)
+size: 2 student in class 1, ...,2 student in class 10
+size: 10 school
+size: 3  class per     school
+size: 3  team  per     school
+size: 3  team  each    school
+size: 3  team  in each school
+size: 10 student per   class 
+size: A student per   class 
+size: 3  calss   in    school 1
+
+size: M school
+size: n  class per     school
+size: n2  team  per     school
+size: N student
+size: balanced class
+size: K ethnic
+size: N/k student in each ethnic
+size: 40% student in  team 1, 60% student in team 2
+
+size: M school,
+      n1  class per     school,
+      n2  team  per     school,
+      N student,
+      balanced class,
+      balanced team,
+      K Ethnic,
+      N/k Student in Ethnic 1, N/K Student in ethnic 2,
+      40% Student in team 1, 60% Student in team 2
+
+M = 10
+N = 100
+
+family: x binomial(n=1,p=0.5) 
+x ~ a + b*class
+beta1=4
+beta2=5

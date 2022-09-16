@@ -1,3 +1,8 @@
+space.sub= "_______"
+tab.sub=   "-------"
+
+"%+%"<-function(a,b){paste0(a,b)}
+
 ##The decision depends on the provided data
 decide.latent<-function(xname){
   ind<- which(apply(vars.dictionary,1,function(m){xname%in%m$alias}))
