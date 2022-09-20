@@ -29,12 +29,16 @@ get_seq<-function(x,type,ind=length(x)){
     
     letters<-rawToChar(as.raw(seq(a,b,by=by)),multiple = TRUE)
     for(i in i0:i1)
-      if(letters[i]!=x[i])
-        stopp()
+      if(letters[i]!=x[i]){
+        return(stopp())
+      }
+        
     
     for(i in i2:length(x))
-      if(letters[length(letters)+i-length(x)]!=x[i])
-        stopp()
+      if(letters[length(letters)+i-length(x)]!=x[i]){
+        return(stopp())
+      }
+        
     
     
     return(list(list(len=length(letters),seq=letters,amb=FALSE,alternatives=list(letters))))
@@ -91,6 +95,26 @@ get_seq<-function(x,type,ind=length(x)){
           a=head(xs,1)
           b=tail(xs,1)
           
+          #xs must be descending or ascending
+          xsd=sort(xs,decreasing = TRUE)
+          xsa=sort(xs,decreasing = FALSE)
+          
+          if(any(xsd!=xs)&&any(xsa!=xs)){
+            #Return NULL seq
+            break
+          }
+          
+          #xs must be an arithmetic sequence
+          if(ind>2){
+            a1=xs[1]
+            b1=xs[2]-xs[1]
+            n=(tail(xs,1)-a1)/b1
+            if(n1!=floor(n1) || n1<2){
+              break
+            }
+          }
+          
+          
           
           if(ind==2){
             by=ifelse(a<b,1,-1)
@@ -141,7 +165,11 @@ get_seq<-function(x,type,ind=length(x)){
     
     
   }else{
-    stopp()
+    return(stopp())
+  }
+  
+  if(length(res)==0){
+    return(stopp())
   }
   
   res2=list(res[[1]])
@@ -307,17 +335,23 @@ expand.ellipsis<-function(txt,multiple=FALSE,ignore.first=FALSE,details=FALSE){
         out[[2]]=list(with.first=FALSE,failed=FALSE,
                       expand.ellipsis(txt.org,ignore.first = TRUE,multiple = multiple,details = details))
       }
-      assign("out",out,parent.frame())
-      call <- rlang::expr(return(out)) 
-      #Return the result all along the caller function
-      rlang::eval_bare(call, env = parent.frame())
+      
+      env=parent.env(environment())
+      assign("out",out,env)
+      assign("txt",out,env)
+      # call <- quote(return(out)) 
+      # #Return the result all along the caller function
+       rlang::eval_bare(quote(return(out)), env = env)
     },error=function(e){
       stop("\ngmlSEM error: cannot parse the sequence\n",txt.org,"\n",msg,ifelse(is.na(msg)||msg=="","","\n")) 
     })
+    return(out)
     
   }
-  if(!grepl("(?'sep'[,\\+\\*/])\\s*\\.\\.\\.\\s*\\k'sep'",txt,perl=TRUE))
-    stopp()
+  if(!grepl("(?'sep'[,\\+\\*/])\\s*\\.\\.\\.\\s*\\k'sep'",txt,perl=TRUE)){
+    return(stopp())
+  }
+    
   
   
   txt=gsub("\\s+"," ",txt,perl=TRUE)
@@ -346,7 +380,7 @@ expand.ellipsis<-function(txt,multiple=FALSE,ignore.first=FALSE,details=FALSE){
     }
       
     if(nrow(cap.start)>1)
-      stopp()
+      return(stopp())
     
     txtt=character()
     st=1
@@ -481,7 +515,7 @@ expand.ellipsis<-function(txt,multiple=FALSE,ignore.first=FALSE,details=FALSE){
       ki=2
       lens=lens2
     }else{
-      stopp()
+      return(stopp())
     }
     
     amb=FALSE
@@ -550,7 +584,7 @@ expand.ellipsis<-function(txt,multiple=FALSE,ignore.first=FALSE,details=FALSE){
   AddedNextElem<-FALSE
   ki<-which(text=="...")[1]
   if(ki==1|ki==length(text))
-    stopp()
+    return(stopp())
   ki<-max(ki-2,1)
   prefix<-paste0(prefix,
                  ifelse(ki==1,"",paste0(paste0(text[1:(ki-1)],collapse=sep),sep)))
@@ -597,7 +631,7 @@ expand.ellipsis<-function(txt,multiple=FALSE,ignore.first=FALSE,details=FALSE){
   }
   
   if(!all.equals(count))
-    stopp()
+    return(stopp())
   
   ellipsis.idx<-which(sapply(seq_along(elems),function(i)is.null(elems[[i]])))
   
@@ -627,6 +661,8 @@ expand.ellipsis<-function(txt,multiple=FALSE,ignore.first=FALSE,details=FALSE){
     el<-elems[[i]]
     df[,k+kk]<-NA
     colnames(df)[k+kk]<-i
+    if(i<i0)
+      next
     for(j in 1:nrow(df))
       df[j,k+kk]<-ifelse(df$type[j]=="numeric",as.numeric(el$parts[j]),el$parts[j])
   }
@@ -638,7 +674,7 @@ expand.ellipsis<-function(txt,multiple=FALSE,ignore.first=FALSE,details=FALSE){
   }
   
   get_seq_df<-function(df,i){
-    tryCatch({
+    #tryCatch({
       x<-unname(unlist(df[i,-(1:kk)]))
       if(!ignore.first){
         seqq<-get_seq(x,df$type[i],ellipsis.idx)    
@@ -647,7 +683,7 @@ expand.ellipsis<-function(txt,multiple=FALSE,ignore.first=FALSE,details=FALSE){
       }
       
       return(seqq)
-    },error=function(e)stopp())
+    #},error=function(e)return(list(list(len=0,seq=numeric(),amb=TRUE,alternatives=list(numeric())))))
   }
   
   # if(is.na(len)){
@@ -664,10 +700,15 @@ expand.ellipsis<-function(txt,multiple=FALSE,ignore.first=FALSE,details=FALSE){
       seqqs[[i]]=list(fixed=TRUE,lens=NA,val=df[i,ncol(df)],res=list())
       lens[[i]]=NA
     }else{
+      tryCatch({
       seq2<-get_seq_df(df,i)
+      },error=function(e){
+        return(stopp())
+        })
       # if(length(seq2)!=len)
-      #   stopp()
+      #   return(stopp())
       #seqq<-paste0(seqq,seq2)
+      
       lens[[i]]=sapply(seq2, function(s)s$len)
       seqqs[[i]]=list(fixed=FALSE,lens=lens[[i]],val=NA,res=seq2)
     }
@@ -677,7 +718,7 @@ expand.ellipsis<-function(txt,multiple=FALSE,ignore.first=FALSE,details=FALSE){
     d=unlist(lapply(xs, function(x)x$lens))
     d=d[!is.na(d)]
     if(length(d)==0)
-      stopp()
+      return(stopp())
     
     for(i in 1:length(xs)){
       if(xs[[i]]$fixed)

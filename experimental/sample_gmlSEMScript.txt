@@ -36,8 +36,11 @@ family: fz zib(link=c("probit","logit"))
 
 #also
 family: y1,...,y10
+        z1,...,z9
         binomial()
         copula()
+
+
 
 #Hierarchical cluster/MultiLevel SEM
 level: school 

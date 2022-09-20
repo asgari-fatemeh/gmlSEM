@@ -31,13 +31,15 @@ model.syntax <- gsub("[#!].*(?=\n)", "", model.syntax, perl = TRUE)
 
 # replace semicolons with newlines prior to split
 model.syntax <- gsub(";", "\n", model.syntax, fixed = TRUE)
+model.syntax <- gsub("\r\n", "\n", model.syntax, fixed = TRUE)
+model.syntax <- gsub(pattern = "\u02dc", replacement = "~", model.syntax)
 
-model.syntax <- gsub("(?<=^|\\n) *group:", ">>G>>", model.syntax, perl = TRUE,ignore.case =TRUE)
+model.syntax <- gsub("(?<=^|\r\n|\n) *group:", ">>G>>", model.syntax, perl = TRUE,ignore.case =TRUE)
 
 
 # Sugar syntax for simulation
 # Sample size can be set within size: blocks
-pattern1<-"(?J)(?:(?<=^|\\n) *size:)(?'phrase'\\s*(?'N'[^\\s]*) *(?'level'[\\w\\.]+)(?=\\b) *(?:((?'keyword'per|in each|each) *(?'plevel'[\\w\\.]+)|(?'keyword'in) *(?'plevel'[\\w\\.]+) *(?'plevelid'\\d+)))?)(?:[,;]\\g'phrase')*"
+pattern1<-"(?J)(?:(?<=^|\r\n|\n) *size:)(?'phrase'\\s*(?'N'[^\\s]*) *(?'level'[\\w\\.]+)(?=\\b) *(?:((?'keyword'per|in each|each) *(?'plevel'[\\w\\.]+)|(?'keyword'in) *(?'plevel'[\\w\\.]+) *(?'plevelid'\\d+)))?)(?:[,;]\\g'phrase')*"
 pattern2<-"(?J)(?'phrase'\\s*(?'N'[^\\s]*) *(?'level'[\\w\\.]+)(?=\\b) *(?:((?'keyword'per|in each|each) *(?'plevel'[\\w\\.]+)|(?'keyword'in) *(?'plevel'[\\w\\.]+) *(?'plevelid'\\d+)))?)[,;]?"
 res<-gregexpr(pattern1,model.syntax,ignore.case = TRUE, perl = TRUE)[[1]]
 match.length<-attr(res,"match.length")
@@ -80,7 +82,7 @@ if(length(capture.start)>0){
 }
 
 #alias: 'as' keyword
-capture.within <- gregexpr("(?:^|\\n) *?((?>\\b|\\.)[\\w\\.\\+\\, ]+?\\b) *( as ) *(?! *,)(.*)", model.syntax, perl = TRUE,ignore.case =TRUE)
+capture.within <- gregexpr("(?:^|\r\n|\n) *?((?>\\b|\\.)[\\w\\.\\+\\, ]+?\\b) *( as ) *(?! *,)(.*)", model.syntax, perl = TRUE,ignore.case =TRUE)
 match.start=capture.within[[1]]
 match.length=attr(capture.within[[1]],"match.length")
 capture.length=attr(capture.within[[1]],"capture.length")
@@ -98,7 +100,7 @@ if(nrow(capture.start)>0){
 
 #'within' keyword in level: command
 while(TRUE){
-  capture.within <- gregexpr("(?<=level:)([^<]+?)(?:$|\\n)", model.syntax,perl = TRUE,ignore.case =TRUE)
+  capture.within <- gregexpr("(?<=level:)([^<]+?)(?:$|\r\n|\n)", model.syntax,perl = TRUE,ignore.case =TRUE)
   if(capture.within[[1]][1]==-1)
     break
   capture.start<-attr(capture.within[[1]],"capture.start")
@@ -119,7 +121,7 @@ while(TRUE){
 
 
 #replacing '(vary|varies|varying) at level' with <<~
-capture.within <- gregexpr("(?:^|\\n)\\s*?[\\w\\.\\,\\+ ]+\\s*? ((vary|varies|varying) at level) ", model.syntax, perl=TRUE,ignore.case =TRUE)
+capture.within <- gregexpr("(?:^|\r\n|\n)\\s*?[\\w\\.\\,\\+ ]+\\s*? ((vary|varies|varying) at level) ", model.syntax, perl=TRUE,ignore.case =TRUE)
 if(capture.within[[1]][1]>0){
   capture.start=attr(capture.within[[1]],"capture.start")
   capture.length=attr(capture.within[[1]],"capture.length")
@@ -137,30 +139,33 @@ if(capture.within[[1]][1]>0){
 
 #marking distributions with tag >>F>>
 #template allow breaklines after the list of variables
-pattern='(?<=family:)[\\w\\.\\,\\+ ()]*?\\s+?([\\w\\.]*?(?:\\((?>[^()]|(?1))*\\)) *?)\\s*([\\w\\.]*?(?:\\((?>[^()]|(?1))*\\)) *?)?(?=\\n|$)'
+pattern='(?<=\\n|^) *family:\\s*([\\w\\._\\,\\+\\s()\\*]*?)\\s*([\\w\\.][\\w\\._]*?(?:\\((?:[^()]|(?2))*\\)) *?)\\s*([\\w\\.][\\w\\._]*?(?:\\((?:[^()]|(?3))*\\)) *?)?(?=\\n|$)'
 capture.within <- gregexpr(pattern, model.syntax, perl=TRUE,ignore.case =TRUE)
 match.start<-capture.within[[1]]
 match.length<-attr(capture.within[[1]],"match.length")
 capture.start<-attr(capture.within[[1]],"capture.start")
 capture.length<-attr(capture.within[[1]],"capture.length")
-capture.start=as.matrix(capture.start,ncol=2)
-capture.length=as.matrix(capture.length,ncol=2)
+capture.start=as.matrix(capture.start,ncol=3)
+capture.length=as.matrix(capture.length,ncol=3)
 if(nrow(capture.start)>0){
   for(i in seq(nrow(capture.start),1,by=-1)){
     txt2<-""
-    if(capture.start[i,2]>0)
-      txt2<-paste0(">>F>>",substring(model.syntax,capture.start[i,2],capture.start[i,2]+capture.length[i,2]-1))
+    if(capture.start[i,3]>0)
+      txt2<-paste0(">>F>>",substring(model.syntax,capture.start[i,3],capture.start[i,3]+capture.length[i,3]-1))
     
-      txt1<-paste0(">>F>>",substring(model.syntax,capture.start[i,1],capture.start[i,1]+capture.length[i,1]-1))
+      txt1<-paste0(">>F>>",substring(model.syntax,capture.start[i,2],capture.start[i,2]+capture.length[i,2]-1))
       
-      txt<-paste0(
-        expand.ellipsis(
-        substring(model.syntax,match.start[i],capture.start[i,1]-1)
-        ),
-        txt1,txt2)
-      txt<-gsub("\\n","",txt,perl  = TRUE)
+      seqq=trim(substring(model.syntax,capture.start[i,1],capture.start[i,1]+capture.length[i,1]-1))
+      seqq=strsplit(seqq,"\n",fixed = TRUE)[[1]]
+      for(j in seq_along(seqq)){
+        seqq[j]=gsub("(^,|,$)","",trim(seqq[j]),perl = TRUE)
+        seqq[j]=expand.ellipsis(seqq[j])
+      }
+      seqq=paste0(seqq,collapse = ",")
+      txt<-paste0(seqq,txt1,txt2)
+      txt<-gsub("\n","",txt,perl  = TRUE)
       
-    model.syntax<-paste0(substring(model.syntax,1,match.start[i]-1),txt,
+    model.syntax<-paste0(substring(model.syntax,1,match.start[i]-1),"family:",txt,"\n",
                          substring(model.syntax,match.start[i]+match.length[i]))    
   }
 
@@ -173,12 +178,11 @@ model.syntax <- gsub("[ \t]+", "", model.syntax, perl = TRUE)
 # if such exists, but parser will not choke because of start.idx
 model.syntax <- gsub("\n{2,}", "\n", model.syntax, perl = TRUE)
 
-# replace 'strange' tildes (in some locales) (new in 0.6-6)
-model.syntax <- gsub(pattern = "\u02dc", replacement = "~", model.syntax)
+
 
 #Expanding three-dots
 #pattern = "[\\w\\.][^:,\\+\\n\\b\\b\\<\\>~\\-]*(?'sep'[,\\+])(?:[^:,\\+\\n\\b\\b\\<\\>~\\|\\-]+\\k'sep')?\\.\\.\\.\\k'sep'[^:,\\+\\n\\b\\b\\<\\>~\\|\\-]*[\\w\\.]"
-pattern  = "(?J)(?>(?>(?>([^:,\\+\\n\\<\\>~\\-\\(\\)|]|(?'cond'\\|))*(?>\\((?>(?!\\.\\.\\.)([^:,\\+\\n\\<\\>~\\-\\(\\)|]|\\k'cond')|(?1))*\\))?){1,2})(?'sep'[,+]))?(?>(?>(?!\\.\\.\\.)([^:,\\+\\n\\<\\>~\\-\\(\\)|]|\\k'cond')*(?:\\((?>[^:,\\+\\n\\<\\>~\\-()|]|(?1))*\\))?){1,2})(?'sep'[,+])\\.\\.\\.\\k'sep'(?>(?>(?!\\.\\.\\.)[^:,\\+\\n\\<\\>~\\-\\(\\)|]*(?>\\((?>(?!\\.\\.\\.)([^:,\\+\\n\\<\\>~\\-\\(\\)|]|\\k'cond')|(?1))*\\))?){1,2})"
+pattern  = "(?J)(?>(?>(?>([^:,\\+\\n\\r\\<\\>~\\-\\(\\)|]|(?'cond'\\|))*(?>\\((?>(?!\\.\\.\\.)([^:,\\+\\n\\r\\<\\>~\\-\\(\\)|]|\\k'cond')|(?1))*\\))?){1,2})(?'sep'[,+]))?(?>(?>(?!\\.\\.\\.)([^:,\\+\\n\\r\\<\\>~\\-\\(\\)|]|\\k'cond')*(?:\\((?>[^:,\\+\\n\\r\\<\\>~\\-()|]|(?1))*\\))?){1,2})(?'sep'[,+])\\.\\.\\.\\k'sep'(?>(?>(?!\\.\\.\\.)[^:,\\+\\n\\r\\<\\>~\\-\\(\\)|]*(?>\\((?>(?!\\.\\.\\.)([^:,\\+\\n\\r\\<\\>~\\-\\(\\)|]|\\k'cond')|(?1))*\\))?){1,2})"
 capture.ellipsis <- gregexpr(pattern, model.syntax, perl=TRUE,ignore.case =TRUE)
 match.start<-capture.ellipsis[[1]]
 match.length<-attr(capture.ellipsis[[1]],"match.length")
