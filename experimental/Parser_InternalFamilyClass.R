@@ -130,7 +130,6 @@ ArgSymbol<-function(f){  #Extracting symbols usd in f
 # This functions if of signature function(...){} which can read and write internal parameters and name specific parameters. The arguments which has changed will be passed to the argument
 newFamily<-function(fname,
                     dim=1,          #support's dimension: number of elements in vector-valued random variables
-                    dim.latent=0,   #dimension of latent generator process
                     support=NULL, 
                     params=NULL,
                     link.mean=NULL,
@@ -147,11 +146,13 @@ newFamily<-function(fname,
   }
   
   #Looking for latent process family declaerations, and put a constraint on them
+  dim.latent=0   #dimension of latent generator process
   lst=list(...)
   inds=sapply(lst, function(l) gmlSEMfamily.classname %in% class(l))
   k=length(on.args.change)
   if(any(inds)){
     inds=which(inds)
+    dim.latent=sum(sapply(inds, function(i)lst[[i]]$dim))
     for(i in seq_along(inds)){
       ind=inds[i]
       nm=names(lst)[ind]
@@ -752,6 +753,8 @@ newFamily<-function(fname,
            name          = fname       ,
            alias         = alias       ,
            support       = support     ,
+           dim           = dim         ,  #Dimension of the support
+           dim.latent    = dim.latent  ,  #sum of the dimension of underlying families' supports (for tobit distribution and psudo families like logit, probit, etc (processes which can be described using an underlying latent continuous process)
            params        = params      ,
            on.args.change=on.args.change,
            

@@ -108,7 +108,7 @@ get_seq<-function(x,type,ind=length(x)){
           if(ind>2){
             a1=xs[1]
             b1=xs[2]-xs[1]
-            n=(tail(xs,1)-a1)/b1
+            n1=(tail(xs,1)-a1)/b1
             if(n1!=floor(n1) || n1<2){
               break
             }
@@ -263,7 +263,7 @@ expand.ellipsis<-function(txt,multiple=FALSE,ignore.first=FALSE,details=FALSE){
   
   return.longest.possbile=TRUE  #Change it to FALSE if you want the shortest possible match
   
-  latent.keywords="=>|->|for|as|=~|^"
+  latent.keywords="=>|->|for|as|=~|\\^"
   # keyword to introduce latents
   # x1 as (z1,y1),...,x9 as (z9,y9)      #zero-inflated distribution 
   # (x11,x12,x13) as y1,...,(x91,x92,x93) as y9
@@ -279,48 +279,21 @@ expand.ellipsis<-function(txt,multiple=FALSE,ignore.first=FALSE,details=FALSE){
   # (...) as (...)
   # (... as ...)
   
-  varPat="(?:(?:[\\w\\.][\\w\\._=]*\\s*,\\s*)*[\\w\\.][\\w\\._=]*)"     #Variable Pattern
-  elem.place.holders=c(                                               #General Place holder patterns
-                       "\\(%1$s\\)",                                #First pattern represents only a vector, i.e. without latent naming conventions
-                       "(%4$s%1$s)\\s*%2$s\\s*(%4$s%3$s)",                #Next patterns match to latent naming conventions
-                       "\\((%4$s%1$s)\\)\\s*%2$s\\s*(%4$s%3$s)", 
-                       "(%4$s%1$s)\\s*%2$s\\s*\\((%4$s%3$s)\\)", 
-                       "\\((%4$s%1$s)\\)\\s*%2$s\\s*\\((%4$s%3$s)\\)",
-                       "\\((%4$s%1$s)\\s*%2$s\\s*(%4$s%3$s)\\)")
-  
-  
-  elem.place.holders.capture=sprintf(elem.place.holders,"%1$s","%2$s","%3$s","")
-  elem.place.holders.nocapture=sprintf(elem.place.holders,"%1$s","%2$s","%3$s","?:")
-  
-
-  latPat0=sprintf(elem.place.holders.nocapture,varPat,"%1$s",varPat)
-  latPat=sprintf(elem.place.holders.capture,varPat,"%1$s",varPat)             #Latent definition patterns
-  
-  
-  #Add parantheses around the pattern to capture the exact keyword in the text
-  latent.keywords.capture="("%+%latent.keywords%+%")"
-  latent.keywords.nocapture="(?:"%+%latent.keywords%+%")"
-  
-  
-  
-  
   txt.org<-txt
-  if(!grepl("...",txt,fixed=TRUE)){
-    return(txt)
-  }
-  sep=""
-  grp<-gregexpr("(?'sep'[,\\+\\*/])?\\s*\\.\\.\\.\\s*\\k'sep'",txt,perl=TRUE)
-  capture.start<-attr(grp[[1]],"capture.start")
-  sep<-substr(txt,capture.start[1],capture.start[1])
+  txt=gsub("\\s+"," ",txt,perl=TRUE)
   
-  #The sequence might be started with the sep char, in the case that it has splited from a longer sequence
-  prefix=""
-  if(substring(txt,1,1)==sep){
-    prefix=sep
-    txt=substring(txt,2)
+  getKeyWord=function(pat,txt){
+    res=gregexpr(pat,txt,perl=TRUE)[[1]]
+    c.s=attr(res,"capture.start")
+    c.l=attr(res,"capture.length")
+    em1=c.s!=0 & c.l!=0
+    c.s=c.s[em1]
+    c.l[em1]=c.l[em1]
+    a=substr(txt,c.s,c.s+c.l-1)
+    if(a=="^")
+      a="\\^"
   }
   
-  len<-NA
   stopp<-function(msg=""){
     
     
@@ -348,13 +321,7 @@ expand.ellipsis<-function(txt,multiple=FALSE,ignore.first=FALSE,details=FALSE){
     return(out)
     
   }
-  if(!grepl("(?'sep'[,\\+\\*/])\\s*\\.\\.\\.\\s*\\k'sep'",txt,perl=TRUE)){
-    return(stopp())
-  }
-    
-  
-  
-  txt=gsub("\\s+"," ",txt,perl=TRUE)
+
   
   perlsplit<-function(x,pat,drop.captured.sgroups.only=TRUE){
     #expect just one match
@@ -398,6 +365,29 @@ expand.ellipsis<-function(txt,multiple=FALSE,ignore.first=FALSE,details=FALSE){
     txtt
   }
   
+  
+  varPat="(?:(?:[\\w\\.][\\w\\._=]*\\s*,\\s*)*[\\w\\.][\\w\\._=]*)"     #Variable Pattern
+  elem.place.holders=c(                                               #General Place holder patterns
+    "\\(%1$s\\)",                                #First pattern represents only a vector, i.e. without latent naming conventions
+    "(%4$s%1$s)\\s*%2$s\\s*(%4$s%3$s)",                #Next patterns match to latent naming conventions
+    "\\((%4$s%1$s)\\)\\s*%2$s\\s*(%4$s%3$s)", 
+    "(%4$s%1$s)\\s*%2$s\\s*\\((%4$s%3$s)\\)", 
+    "\\((%4$s%1$s)\\)\\s*%2$s\\s*\\((%4$s%3$s)\\)",
+    "\\((%4$s%1$s)\\s*%2$s\\s*(%4$s%3$s)\\)")
+  
+  
+  elem.place.holders.capture=sprintf(elem.place.holders,"%1$s","%2$s","%3$s","")
+  elem.place.holders.nocapture=sprintf(elem.place.holders,"%1$s","%2$s","%3$s","?:")
+  
+  
+  latPat0=sprintf(elem.place.holders.nocapture,varPat,"%1$s",varPat)
+  latPat=sprintf(elem.place.holders.capture,varPat,"%1$s",varPat)             #Latent definition patterns
+  
+  
+  #Add parantheses around the pattern to capture the exact keyword in the text
+  latent.keywords.capture="("%+%latent.keywords%+%")"
+  latent.keywords.nocapture="(?:"%+%latent.keywords%+%")"
+  
   #gmlSEM accepts 4 types of ellipsis
   #The first three types has the following patterns and exists in family: block statements
   # (x1.1,x1.2,x1.3),...,(x9.1,x9.2,x9.3)
@@ -412,9 +402,8 @@ expand.ellipsis<-function(txt,multiple=FALSE,ignore.first=FALSE,details=FALSE){
   
   elem.pat0=paste0("\\s*",sprintf(latPat0,latent.keywords.nocapture),"\\s*")
   elem.pat0.flatten=paste0("(?:",paste0("(?:",elem.pat0,")"),")")
-  seq.pat0=sprintf("(?:%1$s\\s*(?:\\s*(,)\\s*%1$s)*\\s*(,)\\s*\\.\\.\\.\\s*(,)\\s*%1$s\\s*(?:\\s*(,)\\s*%1$s\\s*)*)|(?:%1$s\\s*(?:\\s*(,)\\s*%1$s)*\\s*)|\\s*(?:%1$s)\\s*",elem.pat0.flatten)
+  seq.pat0=sprintf("(?:%1$s\\s*(?:\\s*(,)\\s*%1$s)*\\s*(,)\\s*\\.\\.\\.\\s*(,)\\s*%1$s\\s*(?:\\s*(,)\\s*%1$s\\s*)*)|(?:%1$s\\s*(?:\\s*(,)\\s*%1$s)*\\s*)|\\s*(?:%1$s)\\s*",elem.pat0.flatten) 
   pats0=paste0("(?:^|\\n)(?:\\s*",seq.pat0,"\\s*)(?:\\n|$)")
-  
   
   
   pm=sapply(pats0, function(p)grepl(p,txt,perl=TRUE))
@@ -423,26 +412,14 @@ expand.ellipsis<-function(txt,multiple=FALSE,ignore.first=FALSE,details=FALSE){
   if(any(pm)){
     pmi=which(pm)[1]
     
-    getKeyWord=function(pat,txt){
-      res=gregexpr(pat,txt,perl=TRUE)[[1]]
-      c.s=attr(res,"capture.start")
-      c.l=attr(res,"capture.length")
-      em1=c.s!=0 & c.l!=0
-      c.s=c.s[em1]
-      c.l[em1]=c.l[em1]
-      substr(txt,c.s,c.s+c.l-1)
+    
+    if(!grepl("...",txt,fixed=TRUE)){
+      pats0=paste0(elem.pat0.flatten[pmi],"\\s*(,)")
+    }else{
+      pats0=paste0[pmi]
     }
     
-    text=if(pm[1]){
-      # (...) vector without latent naming conventions
-      if(!grepl("...",txt,fixed = TRUE)) #No ...
-        return(txt)
-      
-      perlsplit(txt,pats0[1])
-    }else{
-      pmi=which(pm)[1]
-      perlsplit(txt,pats0[pmi])
-    }
+    text=perlsplit(txt,pats0)
     
     
     if(pm[1]){
@@ -459,6 +436,33 @@ expand.ellipsis<-function(txt,multiple=FALSE,ignore.first=FALSE,details=FALSE){
       n2=length(strsplit(txt0[2],",")[[1]])  
     }
     
+    mat=matrix(".",nrow = length(text),ncol=n1+n2 )
+    
+    if(!grepl("...",txt,fixed=TRUE)){
+      for(i in 1:length(text)){
+        txt0=perlsplit(text[i],latPatKeywordIdent)
+        txt0=trim(strsplit(gsub("(","",gsub(")","",paste0(txt0,collapse = ","),fixed = TRUE),fixed=TRUE),",")[[1]])
+        mat[i,]=txt0
+        for(j in 1:n1){
+          if(grepl("^\\.+$",mat[i,j],perl=TRUE)){
+            stopp("Missing variables are only accepted for underlying latent variables in the family: block.")
+          }
+        }
+        for(j in (n1+1):(n1+n2)){
+          if(grepl("^\\.*$",mat[i,j],perl=TRUE)){
+            mat[i,j]=gsub("^\\.*$",".",mat[i,j],perl = TRUE)
+          }
+        }
+      }
+      
+      attr(txt,"len")=length(text)
+      attr(txt,"n1")=n1
+      attr(txt,"n2")=n2
+      attr(txt,"mat")=mat
+      
+      return(txt)
+    }
+    
     txts=matrix(character(),nrow=length(text),ncol=n1+n2)
     for(i in 1:length(text)){
       txt1=trim(text[i])
@@ -473,11 +477,23 @@ expand.ellipsis<-function(txt,multiple=FALSE,ignore.first=FALSE,details=FALSE){
 
       txt1=trim(gsub("\\s","",gsub(")","",gsub("(","",txt1,fixed = TRUE),fixed = TRUE)))
       txts[i,]=strsplit(txt1,",")[[1]]
+      
+      if(any(txt1==".")){
+        if(i<=n1){
+          stopp("Missing variables are only accepted for underlying latent variables in the family: block.")
+        }
+      }
     }
     res=list()
     for(i in 1:ncol(txts)){
       txt0=paste0(txts[,i],collapse=",")
-      res[[i]]=expand.ellipsis(txt0,ind,details=TRUE)
+      if(txts[1,i]=="."){
+        res[[i]]=list(list(failed=FALSE,lens=NA,missing=TRUE),
+                      list(failed=FALSE,lens=NA,missing=TRUE))
+      }else{
+        res[[i]]=expand.ellipsis(txt0,ind,details=TRUE)  
+      }
+      
     }
     
     lens1=sort(unique(unlist(lapply(res, function(r)if(r[[1]]$failed){NA}else{r[[1]]$lens}))))
@@ -488,6 +504,9 @@ expand.ellipsis<-function(txt,multiple=FALSE,ignore.first=FALSE,details=FALSE){
     }
     
     for(i in seq_along(res)){
+      if(exists('missing',res[[i]][[1]]))
+        next
+      
       lens1=intersect(lens1,res[[i]][[1]]$lens)
       if(!is.null(lens2))
         lens2=intersect(lens2,res[[i]][[2]]$lens)
@@ -522,19 +541,26 @@ expand.ellipsis<-function(txt,multiple=FALSE,ignore.first=FALSE,details=FALSE){
     xss=list()
     xss.amb=list()
     for(i in 1:(n1+n2)){
-      ind=which(sapply(res[[i]][[ki]]$seqs,function(s)s$len==lens))
-      amb=amb||res[[i]][[ki]]$seqs[[ind]]$amb
-      xss[[i]]=res[[i]][[ki]]$seqs[[ind]]$seq
-      xss.amb[[i]]=res[[i]][[ki]]$seqs[[ind]]$seqamb
+      if(exists('missing',res[[i]][[ki]])){
+        xss[[i]]=rep(".",lens)
+        xss.amb[[i]]=rep(".",lens)
+      }else{
+        ind=which(sapply(res[[i]][[ki]]$seqs,function(s)s$len==lens))
+        amb=amb||res[[i]][[ki]]$seqs[[ind]]$amb
+        xss[[i]]=res[[i]][[ki]]$seqs[[ind]]$seq
+        xss.amb[[i]]=res[[i]][[ki]]$seqs[[ind]]$seqamb  
+      }
     }
     
     tx=rep("",length(xss))
+    mat=matrix(".",nrow = length(xss[[1]]),ncol=n1+n2)
     .tx=rep("",length(xss))
     .tx.amb=rep("",length(xss))
     
     for(j in 1:length(xss[[1]])){
       .tx[j]=.tx.amb[j]=tx[j]="("
       for(i in 1:n1){
+        mat[j,i]=xss[[i]][j]
         sep=ifelse(i==n1,"",",")
         tx[j]=tx[j]%+%xss[[i]][j]%+%sep
         .tx[j]=.tx[j]%+%xss[[i]][j]%+%sep
@@ -551,6 +577,7 @@ expand.ellipsis<-function(txt,multiple=FALSE,ignore.first=FALSE,details=FALSE){
       .tx[j]=.tx[j]%+%" "%+%latent.keyword%+%" ("  
       .tx.amb[j]=.tx.amb[j]%+%" "%+%latent.keyword%+%" ("  
       for(i in (n1+1):(n1+n2)){
+        mat[j,i]=xss[[i]][j]
         sep=ifelse(i==(n1+n2),"",",")
         tx[j]=tx[j]%+%xss[[i]][j]%+%sep
         .tx[j]=.tx[j]%+%xss[[i]][j]%+%sep
@@ -570,8 +597,31 @@ expand.ellipsis<-function(txt,multiple=FALSE,ignore.first=FALSE,details=FALSE){
     tx=paste0(tx,collapse = ",")
     
     attr(tx,"len")=lentx
+    attr(tx,"mat")=mat
+    attr(tx,"n1")=n1
+    attr(tx,"n2")=n2
     return(tx)
     
+  }
+  
+  
+  
+  sep=""
+  grp<-gregexpr("(?'sep'[,\\+\\*/])?\\s*\\.\\.\\.\\s*\\k'sep'",txt,perl=TRUE)
+  capture.start<-attr(grp[[1]],"capture.start")
+  sep<-substr(txt,capture.start[1],capture.start[1])
+  
+  
+  #The sequence might be started with the sep char, in the case that it has splited from a longer sequence
+  prefix=""
+  if(substring(txt,1,1)==sep){
+    prefix=sep
+    txt=substring(txt,2)
+  }
+  
+  if(!grepl("...",txt,fixed=TRUE)){
+    txt=setAttr(txt,sep,prefix)
+    return(txt)
   }
   
   txt<-gsub("\\s","",txt,perl=TRUE)
@@ -826,6 +876,19 @@ expand.ellipsis<-function(txt,multiple=FALSE,ignore.first=FALSE,details=FALSE){
       stopp("The parser cannot expand ellipsis. Try to use a more simple syntax or avoid ambiguity!")
   }
   
+  setAttr<-function(txt,sep,prefix=""){
+    txts=strsplit(txt,sep,fixed=TRUE)[[1]]
+    if(prefix!="")
+      txt=paste0(prefix,txt)
+    attr(txt,"len")=length(txts)
+    attr(txt,"n1")=length(txts)
+    attr(txt,"n2")=0
+    attr(txt,"mat")=matrix(txts,ncol=1)
+    txt
+  }
+  
+  if(!details)
+    txt=setAttr(txt,sep)
   return(txt)
   
 }
