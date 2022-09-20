@@ -253,8 +253,16 @@ genPattern<-function(x1len,fixed.inds=c(),seq_leng=2,sep=","){
   pat
 }
 
-
-
+setAttr<-function(txt,sep,prefix=""){
+  txts=strsplit(txt,sep,fixed=TRUE)[[1]]
+  if(prefix!="")
+    txt=paste0(prefix,txt)
+  attr(txt,"len")=length(txts)
+  attr(txt,"n1")=length(txts)
+  attr(txt,"n2")=0
+  attr(txt,"mat")=matrix(txts,ncol=1)
+  txt
+}
 
 
 ################### Expanding ellipsis ##########################
@@ -416,7 +424,7 @@ expand.ellipsis<-function(txt,multiple=FALSE,ignore.first=FALSE,details=FALSE){
     if(!grepl("...",txt,fixed=TRUE)){
       pats0=paste0(elem.pat0.flatten[pmi],"\\s*(,)")
     }else{
-      pats0=paste0[pmi]
+      pats0=pats0[pmi]
     }
     
     text=perlsplit(txt,pats0)
@@ -876,16 +884,6 @@ expand.ellipsis<-function(txt,multiple=FALSE,ignore.first=FALSE,details=FALSE){
       stopp("The parser cannot expand ellipsis. Try to use a more simple syntax or avoid ambiguity!")
   }
   
-  setAttr<-function(txt,sep,prefix=""){
-    txts=strsplit(txt,sep,fixed=TRUE)[[1]]
-    if(prefix!="")
-      txt=paste0(prefix,txt)
-    attr(txt,"len")=length(txts)
-    attr(txt,"n1")=length(txts)
-    attr(txt,"n2")=0
-    attr(txt,"mat")=matrix(txts,ncol=1)
-    txt
-  }
   
   if(!details)
     txt=setAttr(txt,sep)

@@ -339,7 +339,7 @@ all.alias       <- data.frame(
   all.forms=I(list())
 )
 
-covs            <- list()
+covs            <- list()  #lists of lists. one cov matrix per level per group
 levels          <- list()
 levels.matrix   <- matrix()
 rownames(levels.matrix) <- colnames(levels.matrix) <- NA
