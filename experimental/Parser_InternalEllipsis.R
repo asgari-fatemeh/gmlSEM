@@ -267,7 +267,7 @@ setAttr<-function(txt,sep,prefix=""){
 
 ################### Expanding ellipsis ##########################
 #################################################################
-expand.ellipsis<-function(txt,multiple=FALSE,ignore.first=FALSE,details=FALSE){
+expand.ellipsis<-function(txt,multiple=FALSE,ignore.first=FALSE,details=FALSE,sep=""){
   
   return.longest.possbile=TRUE  #Change it to FALSE if you want the shortest possible match
   
@@ -329,50 +329,6 @@ expand.ellipsis<-function(txt,multiple=FALSE,ignore.first=FALSE,details=FALSE){
     return(out)
     
   }
-
-  
-  perlsplit<-function(x,pat,drop.captured.sgroups.only=TRUE){
-    #expect just one match
-    if(!grepl(pat,x,perl=TRUE))
-      return(x)
-    
-    if(!drop.captured.sgroups.only)
-      return(strsplit(x,pat,perl= TRUE)[[1]])
-    
-    text=gregexpr(pat,x,perl= TRUE)[[1]]
-    
-    cap.start=attr(text,"capture.start")
-    cap.len=attr(text,"capture.length")
-    
-    emptInds=rowSums(cap.start)==0 | rowSums(cap.len)==0
-    
-    cap.start =  cap.start[!emptInds,]
-    cap.len   =    cap.len[!emptInds,]
-    
-    if(is.null(dim(cap.start))){
-      cap.start=matrix(cap.start,nrow=1)
-      cap.len=matrix(cap.len,nrow=1)
-    }
-      
-    if(nrow(cap.start)>1)
-      return(stopp())
-    
-    txtt=character()
-    st=1
-    j=1
-    for(i in 1:ncol(cap.start)){
-      if(cap.len[i]==0)
-        next
-      txtt[j]=substr(x,st,cap.start[i]-1)
-      st=cap.start[i]+cap.len[i]
-      j=j+1
-    }
-    if(st<=nchar(x))
-      txtt[length(txtt)+1]=substr(x,st,nchar(x))
-    
-    txtt
-  }
-  
   
   varPat="(?:(?:[\\w\\.][\\w\\._=]*\\s*,\\s*)*[\\w\\.][\\w\\._=]*)"     #Variable Pattern
   elem.place.holders=c(                                               #General Place holder patterns
@@ -614,10 +570,17 @@ expand.ellipsis<-function(txt,multiple=FALSE,ignore.first=FALSE,details=FALSE){
   
   
   
-  sep=""
-  grp<-gregexpr("(?'sep'[,\\+\\*/])?\\s*\\.\\.\\.\\s*\\k'sep'",txt,perl=TRUE)
-  capture.start<-attr(grp[[1]],"capture.start")
-  sep<-substr(txt,capture.start[1],capture.start[1])
+  if(sep==""){
+    grp<-gregexpr("(?J)(?>(?'sep'[,\\+\\*/])?\\s*\\.\\.\\.\\s*\\k'sep'|[^\\s,+]+(?'sep'[,\\+\\*/])(?: *\\k'sep' *[^\\s,+]+)*)",txt,perl=TRUE)
+    capture.start<-attr(grp[[1]],"capture.start")
+    ind=which(capture.start>0)[1]
+    sep<-substr(txt,capture.start[ind],capture.start[ind])  
+    if(is.na(sep)){
+      sep="," #Does not harm the sequencing. The input simply is a single element
+    }
+      
+  }
+  
   
   
   #The sequence might be started with the sep char, in the case that it has splited from a longer sequence

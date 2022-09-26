@@ -4,7 +4,7 @@
 group: gender(old=1,young=2)
 
 fw as forweekend
-fz as  "forever zero"
+fz as  "forever   zero"
 fww as   vary at level
 
 #This is not and ambiguty for Parser
@@ -44,7 +44,7 @@ family: y1,...,y10
 
 #Hierarchical cluster/MultiLevel SEM
 level: school 
-level: class within school
+       team, class within school
 level: class within school within cities
 
 level: school(schoolID)
@@ -115,9 +115,108 @@ speed =~ x7 + x8 + x9
 #size: is a block used for simulation purpose only
 #Syntax=> size: param level (in level param  | (per|each|in each) level)
 size: 10 school
-size: 3  class per     school
-size: 3  team  per     school
-size: 3  team  each    school
-size: 3  team  in each school
-size: 10 student per   class 
-size: 3  calss   in    school 1
+      3  class per     school
+      3  team  per     school
+size: A student per   class 
+      B student per   team
+size: 100  student
+
+
+### Current implemented blocks are
+#level, group, heter, family, rep, size
+# At most one call for group and rep block are accepted in a model
+# rep and size blocks are multiline blocks
+### Do we need to make other blocks multiline as well?
+
+### repeated measure syntax
+##rep|repeated|repeated measures or any abbreviations is acceptable
+rep: time within subject
+rep: x1,...,x10 for x
+     y1,...,y10 for y
+##You can use naming conventions to give a name to the time index, and to use it later in the models
+rep: x1,...,x10 for x(t)
+     y1,...,y10 for y(s)
+##or give a same name, if time indices coincides
+rep: x1,...,x10 for x(t)
+     y1,...,y10 for y(t)
+     
+## you can use the lags on the rhs of a measurement or regression model 
+## with x(-1) or x[-1] or lag(x,1)
+## x(0) stands for baseline
+## the order of lags are expected to be euqal and less than zero. 
+## Let us know if you think we need to leave out this constraint.
+
+## in a family block
+# family: x normal() copula()
+## is equivalent to
+# family: x1,...,x10 normal() copula()
+
+### when a (time,subject) is given in rep: block, all the observed and latent
+## variables will be indexed with a proper suffix 
+## and can be referenced the same in model
+
+## the unique values in the time will be sorted and will be matched with the 
+## increaseing sequence starting from 1. Thus for a variable named 'x',
+## x(-1) refers to the value of X in the previous time, and X(0) is again the baseline measurements.
+
+### using repeated mesured variables as responses either on the lhs of a regression model or on the rhs of a factor model have consequences
+
+## Example: Let say we have 10 measurements for x and y and z as defined in the last rep block, then
+# y ~ x + z
+## is equivalent to
+# y1 ~ a*x1 + b*z
+# y2 ~ a*x2 + b*z
+# ...
+# y10 ~ a*x10 + b*z
+## and
+# eta =~ x + y + z
+## is equivalent to
+ 
+# eta1 =~ a*x1 + b*y1 + c*z1
+# eta1 =~ a*x2 + b*y2 + c*z2
+# ...
+# eta1 =~ a*x10 + b*y10 + c*z10
+
+### Note that the model y ~ x + z produce an error if x and y have not the same length or the time index are named differently. 
+## The symbol 't' will automatically will assign as the time index name if 't' is not defined in data, and model and the length of all repeated statements are equal.
+
+### The number of equations depends on the order of lags used in the models,
+## For example, 
+# y ~ x + x(-1) +x(-2) + z
+## is equivalent to the the system of the follwoing 8 regression models
+# y3 ~ a*x3 + b*x2 +c*x1 + d*z3
+# y4 ~ a*x4 + b*x3 +c*x2 + d*z4
+# ...
+# y10 ~ a*x10 + b*x9 +c*x8 + d*z10
+## and 
+# y ~ x + x(-1) +x(-2) + x(0) + z  !x(0) is the baseline
+## is equivalent to the the system of the follwoing 7 regression models
+# y4 ~ a*x4 + b*x3 +c*x2 + d*x1 + e*z4
+# y5 ~ a*x5 + b*x4 +c*x3 + d*x1 + e*z4
+# ...
+# y10 ~ a*x10 + b*x9 +c*x8 + d*x1 + e*z10
+
+### The same holds for factor models. You can use positive lags in the models for better read. However the gmlSEM will shift the lags so that
+## y(1) ~ x + x(0) + z
+###is equivalent to 
+## y ~ x(-1) + x(0) + z(-1)
+
+
+### We can use this approach to write growth curve models:
+## a growth curve model with three measurements
+# slope =~ 0*x1 + 1*x2 + 2*x3
+# inte  =~ 1*x1 + 1*x2 + 1*x3
+## is equivalent to
+# rep: x1,x2,x3 for x(t)
+# x ~ int + slope*(t-1)
+#family: int slope normal()  !Not necessary, since  a normal distribution is assumed by default for variables for which the family is not defined. It will be noticed in an accumulated notice statement.
+ 
+## or 
+rep: x1,x2,x3,x4 for x(t)
+x ~ int + slope1*t + slope*(t^2)
+
+## or 
+rep: x1,...,x8 for x(t)
+x ~ s(t)  #smooth term as in functional regression
+
+

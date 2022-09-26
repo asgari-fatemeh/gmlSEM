@@ -4,6 +4,7 @@ source("experimental/Parser_InternalMisc.R")
 source("experimental/Parser_InternalEllipsis.R")
 source("experimental/Parser_InternalFamilyClass.R")
 source("experimental/Parser_InternalFamilyCollection.R")
+source("experimental/Parser_InternalObjects.R")
 
 sample_syntax_file       = 'experimental/sample_gmlSEMScript.txt'
 fileName = 'experimental/sample_gmlSEMScript.txt'
@@ -13,12 +14,10 @@ model.syntax      = readChar(sample_syntax_file, file.info(sample_syntax_file)$s
 #simulation.syntax = readChar(sample_syntax_extra_file, file.info(sample_syntax_extra_file)$size)
 #model.syntax<-paste0(model.syntax,"\n",simulation.syntax)
 
-##Arguments
-#internal machinery
-data.is.provided = FALSE
 
 #############################################################
 ##################### Parser Code ###########################
+
 
 # check for empty syntax
 if(length(model.syntax) == 0) {
@@ -27,38 +26,64 @@ if(length(model.syntax) == 0) {
 
 # remove comments prior to split:
 # match from comment character to newline, but don't eliminate newline
-model.syntax <- gsub("[#!].*(?=\n)", "", model.syntax, perl = TRUE)
+model.syntax <- gsub("[#!].*(?=\n|$)", "", model.syntax, perl = TRUE)
 
-# replace semicolons with newlines prior to split
 model.syntax <- gsub(";", "\n", model.syntax, fixed = TRUE)
 model.syntax <- gsub("\r\n", "\n", model.syntax, fixed = TRUE)
+model.syntax <- gsub("\n(\\s*\n)?", "\n", model.syntax, perl = TRUE)
 model.syntax <- gsub(pattern = "\u02dc", replacement = "~", model.syntax)
 
-model.syntax <- gsub("(?<=^|\r\n|\n) *group:", ">>G>>", model.syntax, perl = TRUE,ignore.case =TRUE)
+model.org=model.syntax
+
+# Change block names to simpler  identifiable ones
+getBlockPat<-function(block){#Create a pattern matches to block name and its abbreviations
+ b=strsplit(block,"")[[1]] 
+ pat="(?<=^|\n) *(?=.{1,})"
+ pat=paste0(pat,b[1],"?")
+ if((length(b)==2)){
+   pat=paste0(pat,sprintf("(?:(?<=%s)%s|\\.)?",b[1],b[2]))
+ }else if(length(b)>2){
+   for(i in 2:(length(b)-1))
+     pat=paste0(pat,sprintf("(?:(?<=%s)%s)?",substr(block,1,i-1),b[i]))
+   i=length(b)
+   pat=paste0(pat,sprintf("(?:(?<=%s)%s|\\.)?",substr(block,1,i-1),b[i]))
+ }
+pat=paste0(pat," *:")   
+ 
+}
+
+#model.syntax <- gsub("(?<=^|\n) *group:", ">>G>>", model.syntax, perl = TRUE,ignore.case =TRUE)
+model.syntax <- gsub(getBlockPat("group"), ">>G>>:", model.syntax, perl = TRUE,ignore.case =TRUE)
+model.syntax <- gsub(getBlockPat("level"), ">>L>>:", model.syntax, perl = TRUE,ignore.case =TRUE)
+model.syntax <- gsub(getBlockPat("repeated"), ">>R>>:", model.syntax, perl = TRUE,ignore.case =TRUE)
+model.syntax <- gsub(getBlockPat("heteroskedasticity"), ">>H>>:", model.syntax, perl = TRUE,ignore.case =TRUE)
+model.syntax <- gsub(getBlockPat("family"), ">>F>>:", model.syntax, perl = TRUE,ignore.case =TRUE)
+model.syntax <- gsub(getBlockPat("size"), ">>S>>:", model.syntax, perl = TRUE,ignore.case =TRUE)
 
 
 # Sugar syntax for simulation
 # Sample size can be set within size: blocks
-pattern1<-"(?J)(?:(?<=^|\r\n|\n) *size:)(?'phrase'\\s*(?'N'[^\\s]*) *(?'level'[\\w\\.]+)(?=\\b) *(?:((?'keyword'per|in each|each) *(?'plevel'[\\w\\.]+)|(?'keyword'in) *(?'plevel'[\\w\\.]+) *(?'plevelid'\\d+)))?)(?:[,;]\\g'phrase')*"
-pattern2<-"(?J)(?'phrase'\\s*(?'N'[^\\s]*) *(?'level'[\\w\\.]+)(?=\\b) *(?:((?'keyword'per|in each|each) *(?'plevel'[\\w\\.]+)|(?'keyword'in) *(?'plevel'[\\w\\.]+) *(?'plevelid'\\d+)))?)[,;]?"
+pattern1="(?J)(?:(?<=^|\\n) *>>S>>:)(?'phrase'\\s*(?:(?'N'[^\\s:>]+)(?=\\b) *(?'level'[\\w\\.]+)(?=\\b)) *(?:(?:(?'keyword'per|in each|each) *(?'plevel'[\\w\\.]+)|(?'keyword'|in) *(?'plevel'[\\w\\.]+) *(?'plevelid'\\d+)))?)\\g'phrase'*"
+pattern2="(?J)(?'phrase'\\s*(?'N'[^\\s:>]*) *(?'level'[\\w\\.]+)(?=\\b) *(?:((?'keyword'per|in each|each) *(?'plevel'[\\w\\.]+)|(?'keyword'in) *(?'plevel'[\\w\\.]+) *(?'plevelid'\\d+)))?)[,;]?"
 res<-gregexpr(pattern1,model.syntax,ignore.case = TRUE, perl = TRUE)[[1]]
 match.length<-attr(res,"match.length")
 for(i in rev(seq_along(res))){
   txt<-substr(model.syntax,res[i],res[i]+match.length[i]-1)
-  txt<-gsub("size:","",txt,ignore.case = TRUE)
+  txt<-gsub(">>S>>:","",txt,ignore.case = TRUE)
   txt<-gsub("\n","",txt,fixed = TRUE)
   if(grepl(",\\s*\\.\\.\\.\\s*,",txt,perl=TRUE)){
-    ###### 2Do: 
-    ###### Postpone expanding ellipsis until variables are resolved
     txt<-gsub(",\\s*\\.\\.\\.\\s*,",",...,",txt,perl=TRUE)
     txt<-trim(txt)
     txt<-switch.space(txt)
     txt<-expand.ellipsis(txt)
-  }else{
-    txt<-switch.space(txt)  
   }
-  txt<-strsplit(txt,",",fixed=TRUE)
-  txt<-sapply(txt, function(x)paste0(">>S>>",x))
+  
+  res2=gregexpr(pattern2,txt,ignore.case = TRUE, perl = TRUE)[[1]]
+  vals=captured.groups.dataframe(txt,res2)
+  vals[,1]=trim(vals[,1])
+  parsedData[["size"]]=rbind(vals,parsedData[["size"]])
+  txt<-sapply(txt, function(x)paste0(">>S>>:",vals[,1]))
+  txt<-switch.space(txt)
   txt<-paste(txt,collapse = "\n")
   model.syntax<-paste0(substring(model.syntax,1,res[i]-1),
                        txt,
@@ -82,7 +107,7 @@ if(length(capture.start)>0){
 }
 
 #alias: 'as' keyword
-capture.within <- gregexpr("(?:^|\r\n|\n) *?((?>\\b|\\.)[\\w\\.\\+\\, ]+?\\b) *( as ) *(?! *,)(.*)", model.syntax, perl = TRUE,ignore.case =TRUE)
+capture.within <- gregexpr("(?:^|\n) *?((?>\\b|\\.)[\\w\\.\\+\\, ]+?\\b) *( as ) *(?! *,)(.*)", model.syntax, perl = TRUE,ignore.case =TRUE)
 match.start=capture.within[[1]]
 match.length=attr(capture.within[[1]],"match.length")
 capture.length=attr(capture.within[[1]],"capture.length")
@@ -90,19 +115,107 @@ capture.length=as.matrix(capture.length,ncol=2)
 capture.start<-attr(capture.within[[1]],"capture.start")
 capture.start=as.matrix(capture.start,ncol=2)
 if(nrow(capture.start)>0){
-  for(i in seq(nrow(capture.start),1,by=-1))
-    model.syntax<-paste0(substring(model.syntax,1,capture.start[i,1]-1),"alias:",
-                         expand.ellipsis(substring(model.syntax,capture.start[i,1],capture.start[i,1]+capture.length[i,1])),"<>",
-                         expand.ellipsis(switch.space(trim(substring(model.syntax,capture.start[i,3],capture.start[i,3]+capture.length[i,3]-1)))),
+  for(i in seq(nrow(capture.start),1,by=-1)){
+    lhs=trim(substring(model.syntax,capture.start[i,1],capture.start[i,1]+capture.length[i,1]))
+    rhs=trim(substring(model.syntax,capture.start[i,3],capture.start[i,3]+capture.length[i,3]-1))
+    
+    lhs=gsub("\\s{1,}"," ",lhs,perl=TRUE)
+    rhs=gsub("'","",gsub('"',"",gsub("\\s{1,}"," ",rhs,perl=TRUE))) #Removing quotation marks
+    
+    lhs=expand.ellipsis(lhs,sep=",")   #In alias statement it is expected that the elements are separated by a comma
+    rhs=expand.ellipsis(rhs,sep=",")
+    
+    lhsm=attr(lhs,"mat")
+    rhsm=attr(rhs,"mat")
+    
+    if(length(lhsm)!=length(rhsm))
+      stop("\ngmlSEM error: Error in parsing alias statement:\n",
+           substring(model.syntax,capture.start[i,1],capture.start[i,3]+capture.length[i,3]),
+           "\nThe length of left hand side and right hand side are not equal")
+    
+    parsedData[["alias"]]=rbind(data.frame(lhs=lhsm,rhs=rhsm),
+                                parsedData[["alias"]])
+    
+    model.syntax<-paste0(substring(model.syntax,1,capture.start[i,1]-1),">>A>>:",
+                         lhs,"<>",switch.space(rhs),
                          substring(model.syntax,match.start[i]+match.length[i]))
+    
+    add.alias(lhsm,rhsm)
+    
+  }
+}
+
+
+#replacing '(vary|varies|varying) at level' with <<~
+capture.within <- gregexpr("(?<=^|\n) *([\\w\\.\\,\\+ ]+) *(?:(?:vary|varies|varying) at level) *(.*) *(?=$|\n)", model.syntax, perl=TRUE,ignore.case =TRUE)
+match.start<-capture.within[[1]]
+if(capture.within[[1]][1]>0){
+  capture.start=attr(capture.within[[1]],"capture.start")
+  capture.length=attr(capture.within[[1]],"capture.length")
+  
+  if(length(capture.start)>0){
+    for(i in seq(nrow(capture.start),1,by=-1)){
+      if(any(capture.length[i,]==0))
+        stop("\ngmlSEM error: invalid syntax in alias statement\n",
+             substring(model.syntax,match.start[i],capture.start[i,2]+capture.length[i,2]-1))
+      
+     txt=trim(substring(model.syntax,capture.start[i,1],capture.start[i,1]+capture.length[i,1]-1))
+     txt=expand.ellipsis(txt,sep=",") #It is expected that elements to be seperated by comma
+     lev=trim(substring(model.syntax,capture.start[i,2],capture.start[i,2]+capture.length[i,2]-1))
+       
+      txtm=trim(c(attr(txt,"mat")))
+      txtm.par=txtm
+      lev.par=lev
+      if(grepl("(",lev,fixed = TRUE)){
+        levv=captured.groups(lev," *(?'var'.*) *\\( *(?'varn'.*) *\\)")
+        lev=levv$var
+        lev.par=levv$varn
+      }
+      
+      for(j in 1:length(txtm)){
+        if(grepl("(",txtm[j],fixed=TRUE)){
+          levv=captured.groups(txtm[j]," *(?'var'.*) *\\( *(?'varn'.*) *\\)")
+          txtm[j]=levv$var
+          txtm.par[j]=levv$varn
+        }
+      }
+    
+      
+      txtv1=!is.valid.varname(txtm)
+      txtv2=!is.valid.varname(txtm.par)
+      lev1=!is.valid.varname(lev)
+      lev2=!is.valid.varname(lev.par)
+      
+      if(any(txtv1)||any(txtv2)||lev1||lev2){
+        tt=c(txtm,txtm.par,lev,lev.par)
+        ttt=c(txtv1,txtv2,lev1,lev2)
+        tx=tt[which(ttt)[1]]
+        stop("\ngmlSEM error: Invalid variable name '",tx,"' in alias statement:\n",
+             substring(model.syntax,match.start[i],capture.start[i,2]+capture.length[i,2]-1))
+      }
+      
+      model.syntax<-paste0(substring(model.syntax,1,match.start[i]-1),">>V>>:",
+                           txt,"<<~",lev,
+                           substring(model.syntax,capture.start[i,2]+capture.length[i,2]))
+      
+      lev=get.alias.lhs(lev)
+      add.alias(lev,lev.par,"OV")
+      add.levels(lev)
+      
+      parsedData[["vars.level"]]=rbind(data.frame(var=txtm,var.inpar=txtm.par,level=lev),
+                                       parsedData[["vars.level"]])
+    }
+    
+  }  
 }
 
 
 #'within' keyword in level: command
 while(TRUE){
-  capture.within <- gregexpr("(?<=level:)([^<]+?)(?:$|\r\n|\n)", model.syntax,perl = TRUE,ignore.case =TRUE)
+  capture.within <- gregexpr("(?<=>>L>>:)(\\s*[\\w\\.]+ *(?:\\( *[\\w\\.]+ *\\))?)+(?=$|\n)", model.syntax,perl = TRUE,ignore.case =TRUE)
   if(capture.within[[1]][1]==-1)
     break
+  
   capture.start<-attr(capture.within[[1]],"capture.start")
   capture.length<-attr(capture.within[[1]],"capture.length")
   match.length<-attr(capture.within[[1]],"match.length")
@@ -115,31 +228,22 @@ while(TRUE){
                            level_text,
                            substring(model.syntax,match.start[i]+match.length[i]))
     }
-      
+    
   }  
 }
 
-
-#replacing '(vary|varies|varying) at level' with <<~
-capture.within <- gregexpr("(?:^|\r\n|\n)\\s*?[\\w\\.\\,\\+ ]+\\s*? ((vary|varies|varying) at level) ", model.syntax, perl=TRUE,ignore.case =TRUE)
-if(capture.within[[1]][1]>0){
-  capture.start=attr(capture.within[[1]],"capture.start")
-  capture.length=attr(capture.within[[1]],"capture.length")
-  
-  capture.start=capture.start[,1]
-  capture.length=capture.length[,1]
-  
-  if(length(capture.start)>0){
-    for(i in seq(length(capture.start),1,by=-1))
-      model.syntax<-paste0(substring(model.syntax,1,capture.start[i]-1),"<<~",
-                           substring(model.syntax,capture.start[i]+capture.length[i]))
-  }  
+#Rectify lev names with respect to new aliases
+if(!is.null(nrow(parsedData[["vars.level"]]))){
+  parsedData[["vars.level"]]$level=get.alias.lhs(parsedData[["vars.level"]]$level)
+}
+if(nrow(levels.matrix)>0){
+  colnames(levels.matrix)=rownames(levels.matrix)=get.alias.lhs(rownames(levels.matrix))
 }
 
 
-#marking distributions with tag >>F>>
+#marking distributions with tag >>F>>:
 #template allow breaklines after the list of variables
-pattern='(?<=\\n|^) *family:\\s*([\\w\\._\\,\\+\\s()\\*]*?)\\s*([\\w\\.][\\w\\._]*?(?:\\((?:[^()]|(?2))*\\)) *?)\\s*([\\w\\.][\\w\\._]*?(?:\\((?:[^()]|(?3))*\\)) *?)?(?=\\n|$)'
+pattern='(?<=\\n|^) *>>F>>:\\s*([\\w\\._\\,\\+\\s()\\*]*?)\\s*([\\w\\.][\\w\\._]*?(?:\\((?:[^()]|(?2))*\\)) *?)\\s*([\\w\\.][\\w\\._]*?(?:\\((?:[^()]|(?3))*\\)) *?)?(?=\\n|$)'
 capture.within <- gregexpr(pattern, model.syntax, perl=TRUE,ignore.case =TRUE)
 match.start<-capture.within[[1]]
 match.length<-attr(capture.within[[1]],"match.length")
@@ -165,7 +269,7 @@ if(nrow(capture.start)>0){
       txt<-paste0(seqq,txt1,txt2)
       txt<-gsub("\n","",txt,perl  = TRUE)
       
-    model.syntax<-paste0(substring(model.syntax,1,match.start[i]-1),"family:",txt,"\n",
+    model.syntax<-paste0(substring(model.syntax,1,match.start[i]-1),">>F>>:",txt,"\n",
                          substring(model.syntax,match.start[i]+match.length[i]))    
   }
 
@@ -214,42 +318,7 @@ model <- unlist( strsplit(model.syntax, "\n") )
 # model.simple <- gsub("\\(.*\\)\\*", "MODIFIER*", model)
 model.simple <- gsub("\\\".[^\\\"]*\\\"", "LABEL", model)
 
-#start.idx <- grep("[~=<>:|%]", model.simple)
-operators.blocks <- c(
-               #G: gmlSEM supported operator
-               #L: lavaan supported operator
-               
-               ## gmlSEM specific ancillary operators 
-               # Alias is the first operator to look at
-               "<>"    = "alias"     , #G <> substitute for as keyword in aliases
-               "<<~"   = "vary"      , #G <<~ substitute for 'vary at level' clause
-               "<<"    = "level"     , #G << substitute for within keyword in level: blocks, 
-               ">>F>>" = "family"    , #G identify distribution and copula in family: blocks
-               ">>G>>" = "group"     , #G Group block
-               ">>S>>" ="size"       , #G Sugar syntax for specifying sampe size for simulation prupose
-               
-               ## Other operators
-               "=~"   = "measurement", #L#G Latent variable definitions:
-               "<~"   = "formative"  , #L#G formative factors as in f5 <~ z1 + z2 + z3 + z4 
-               "~~"   = "covariance" , #L#G Covariance
-               "~"    = "regression" , #L#G Regression model
-               ":="   = "monitor"    , #L#G Defining parameters to monitor
-               "<="   = "constraint" , #G   constraint
-               ">="   = "constraint" , #G   constraint
-               "<"    = "constraint" , #L#G constraint
-               ">"    = "constraint" , #L#G constraint
-               "=="   = "constraint" , #L#G constraint
-               "="    = "constraint"   #G   constraint
-               #":"   = "block"         gmlSEM does not expect any other block
-               #"\\|" = "nouse"         gmlSEM provides family: blocks as a unified way to define distributions forall variables.
-               #                        Hence, we do not use \\| for defining thresholds for categorical variables as in lavaan.
-               #                        family: y ordinal(levels=c(1,2,3,4),thresholds=c(0,NA,NA),underlying.family=Gaussian())
-               #"~*~" = "nouse"         Scaling factor operator is ommited from gmlSEM syntax
-               #"%"   = "nouse"
-               )
 
-operators <- names(operators.blocks)
-lhs.blocks <- c("level","family","heter","group","size")
 
 start.idx <- grep(paste(operators, collapse = "|"), model.simple)
 
@@ -306,202 +375,6 @@ ind<-sort(ind,index.return=T)$ix
 model<-model[ind]
 model.simple<-model.simple[ind]
 
-
-GROUP_OP <- FALSE
-LEVEL_OP <- FALSE
-group<-""
-
-#Parser Output
-vars.dictionary <- data.frame(
-                       name         = character() ,
-                       alias        = I(list())   ,
-                       nameInData   = character() ,
-                       nameToPrint  = character() ,
-                       appeared.as.fa = logical() , #Appeared as a factor in a measrement model
-                       appeared.as.re = logical() , #Appeared as a random effect in a regression model
-                       latent       = logical()   , #NA if needs.data.scan
-                       response     = logical()   ,
-                       family       = I(list())   ,
-                       vary         = character() ,
-                       heter        = logical()   ,
-                       heter.params = I(list())   ,
-                       heter.vars   = I(list())   ,
-                       reg.params   = I(list())   ,
-                       reg.vars     = I(list())   ,
-                       reg.smooth   = logical()   ,
-                       depends.on   = I(list())
-                       )
-all.alias       <- data.frame(
-  lhs=character(),
-  rhs=character(),
-  var.name=character(),
-  role=character(), #PAR, LV, OV
-  all.forms=I(list())
-)
-
-covs            <- list()  #lists of lists. one cov matrix per level per group
-levels          <- list()
-levels.matrix   <- matrix()
-rownames(levels.matrix) <- colnames(levels.matrix) <- NA
-
-
-#gmlSEM parser environment to resolve parameter values
-env=new.env()
-
-group.specs     <- list(
-  "" = list(
-        vars.dictionary = vars.dictionary,
-        covs            = covs #Group specific covariance structure
-          )
-  )
-
-
-set.vary<-function(lhs,rhs){
-  vars<-split.vars(lhs)
-  for(i1 in seq_along(vars)){
-    var<-vars[i]
-    if(! var %in% vars.dictionary$name)
-      vars.dictionary[nrow(vars.dictionary)+1,1]<-var
-    vars.dictionary$vary[vars.dictionary$name==var]<-rhs
-  }
-}
-
-add.levels<-function(lev){
-  if(lev=="")
-    return()
-  
-  rhs2<-get.alias.rhs(lev)
-  if(lev=="1"|rhs2=="1")
-    return()  #Do not add the base level to the matrix
-  
-  if(! rhs2 %in%  rownames(levels.matrix)){
-    levels.matrix<-rbind(levels.matrix,0)
-    levels.matrix<-cbind(levels.matrix,0)
-    rownames(levels.matrix)<-c(rownames(levels.matrix),rhs2)
-    colnames(levels.matrix)<-c(colnames(levels.matrix),rhs2)
-  }
-  
-}
-set.levels.matrix<-function(lhs,rhs){
-  if(lhs==""||rhs=="")
-    return()
-  lhs<-get.alias.rhs(lhs)
-  if(lhs=="1")
-    return()  #ignore the base level
-  rhs<-get.alias.rhs(rhs)
-  if(rhs=="1")
-    stop("gmlSEM error: base level can not be superior to other levels.")
-  
-  add.levels(rhs)
-  levels.matrix[lhs,rhs]<-1
-}
-
-get.alias.ind<-function(x){
-    inds<-apply(all.alias,1, function(x) lhs%in% x[['all.forms']])
-  which(inds)
-}
-#Reconsider relabling ability of unlabled symbols a=a -> a=b
-add.alias<-function(lhs,rhs=NULL,role=NA){
-  
-  if(is.null(rhs)){
-    inds<-get.alias.ind(lhs)
-    
-    if(nrow(inds)==0){
-      ind<<-nrow(all.alias)+1
-      all.alias[ind,]<<-NA
-      all.alias[ind,1:4]<<-c(lhs,lhs,"",role)
-      all.alias$all.forms[[ind]]<<-c(lhs)
-    }
-    
-    return()
-  }
-  
-  if(lhs==""||rhs=="")
-    stop("glmSEM error: null alias can not be set for",lhs,rhs)
-  
-  ind<- unique(c(get.alias.ind(lhs),get.alias.ind(rhs)))
-
-  if(length(ind)==0){
-    ind<-nrow(all.alias)+1
-    all.alias[ind,1:4]<<-c(lhs,rhs,"",role)
-    all.alias$all.forms[[ind]]<<-c(lhs,rhs)
-    
-  }else if(length(ind)>1){
-    i1<-get.alias.ind(lhs)
-    i2<-get.alias.ind(rhs)
-    
-    a1<-all.alias[i1,]
-    a2<-all.alias[i2,]
-    
-    if((a1[1]==a1[2])&(a2[1]==a2[2])){
-      #remove the two rows and define the alias
-      all.alias<<-all.alias[-c(i1,i2),]
-      ind<-nrow(all.alias)+1
-      all.alias[ind,1:4]<<-c(lhs,rhs,"",role)
-      all.alias$all.forms[[ind]]<<-unique(c(lhs,rhs,a1$all.forms[[1]],a2$all.forms[[1]]))
-    }else{
-      b1<-ifelse(a1[1]==lhs,a1[2],a1[1])
-      b2<-ifelse(a2[1]==rhs,a2[2],a2[1])
-      stop("\ngmlSEM Parser Error: Multiple definition for alias:\n",
-           ifelse(b1!=lhs,lhs%+%" is defined as an alias for "%+%b1%+%"\n",""),
-           ifelse(b2!=rhs,rhs%+%" is defined as an alias for "%+%b2%+%"\n",""),
-           "Thus, ",lhs," and ",rhs," cannot be defined as alias.")
-    }
-  }else{
-    a<-all.alias[ind,]
-    if((a[1]=="lhs")&(a[2]==rhs)){
-      #Do nothing
-      return()
-    }else if(a[1]==a[2]){#Update the alias
-      all.alias[ind,1:4]<<-c(lhs,rhs,"",role)
-      all.alias$all.forms[ind]<-unique(c(lhs,rhs,all.alias$all.forms[ind]))
-    }else{
-      if(a[2]==lhs&a[1]==rhs){
-        warning("\ngmlSEM Parser Error: Multiple definition for alias:\n",
-                a[1]," is defined as alias for ",a[2], 
-                " while ",a[2], "is defined on the right hand side.",
-                '\nNew definition for "',lhs,"' as '",rhs,"' with '",rhs,"' on the right hand side will be ignored.")
-      }else{
-        stop("\ngmlSEM Parser Error: Multiple definition for alias:\n",
-             a[1]," is defined as an alias for ",a[2],"\n",
-             "Thus, ",lhs," and ",rhs," cannot be defined as new aliases.")
-      }
-      
-    }
-  }
-  
-}
-
-add.alias.new.forms<-function(al,newform){
-  #Add alias if not exists
-  al<-get.alias.lhs(al)
-  ind<-get.alias.ind(al)
-  all.alias$all.forms[[ind]]<<-unique(c(all.alias$all.forms[[ind]],newform))
-}
-
-get.alias.lhs<-function(lbl){
-  ind<-get.alias.ind(lbl)
-  
-  if(length(ind)>0)
-    return(all.alias[ind,1])
-  
-  if(lbl!="1")
-    add.alias(lbl,lbl)
-  
-  lbl
-}
-
-get.alias.rhs<-function(lbl){
-  ind<-get.alias.ind(lbl)
-  
-  if(length(ind)>0)
-    return(all.alias[ind,2])
-  
-  if(lbl!="1")
-    add.alias(lbl,lbl)
-  
-  lbl
-}
 
 
 for(i in 1:length(model)) {
@@ -565,7 +438,7 @@ for(i in 1:length(model)) {
              "group: groupLabel(varname)")
       }else{
         res<-gregexpr("(?J)\\((?>(?'labels'[\\w\\.]+=[\\w\\.]+(?:,[\\w\\.]+=[\\w\\.]+)*)|(?'alias'[\\w\\.]+)(?:,(?'labels'[\\w\\.]+=[\\w\\.]+(?:,[\\w\\.]+=[\\w\\.]+)*))?)\\)",txt,perl=TRUE)[[1]]
-        res<-captured.groups(txt,res)
+        res<-captured.groups.list(txt,res)
         if(res$alias!="")
           add.alias(res$alias,g)
         txt<-strsplit(res$labels,",")[[1]]
@@ -648,29 +521,13 @@ for(i in 1:length(model)) {
   })
   
   
-  captured.groups<-function(txt,gpr){
-    capture.start<-attr(gpr,"capture.start")
-    capture.length<-attr(gpr,"capture.length")
-    
-    groups<-colnames(capture.start)
-    gr<-list()
-    for(i in seq_along(groups)){
-      if(groups[i]=="" | capture.length[1,i]==0)
-        next
-      gr[[groups[i]]]<-substr(txt,capture.start[1,i],
-                              capture.start[1,i]+capture.length[1,i]-1)
-    }
-
-    gr 
-    
-  }
   
   size=quote({
     
     rhs<-switch.space(rhs)
     pattern<-"(?J)(?'phrase'\\s*(?'N'[^\\s]*) *(?'level'[\\w\\.]+)(?=\\b) *(?:((?'keyword'per|in each|each) *(?'plevel'[\\w\\.]+)|(?'keyword'in) *(?'plevel'[\\w\\.]+) *(?'plevelid'\\d+)))?)"
     res<-gregexpr(pattern,rhs,ignore.case = TRUE, perl = TRUE)[[1]]
-    d<-captured.groups(rhs,res)
+    d<-captured.groups.list(rhs,res)
     
     
   })

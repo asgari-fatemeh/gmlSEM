@@ -98,3 +98,109 @@ split.vars<-function(x){
   strsplit(txt,"[,\\+]",perl = TRUE)[[1]]
 }
 
+is.valid.varname<-function(x){
+  sapply(x, function(xx)grepl("^[\\w\\.][\\w\\._\\-]*",xx,perl = TRUE))
+}
+
+captured.groups<-function(txt,pat,...){
+  gpr=gregexpr(pat,txt,perl=TRUE,...)[[1]]
+  capture.start<-attr(gpr,"capture.start")
+  capture.length<-attr(gpr,"capture.length")
+  
+  groups<-colnames(capture.start)
+  gr<-list()
+  for(i in seq_along(groups)){
+    if(groups[i]=="" | capture.length[1,i]==0)
+      next
+    gr[[groups[i]]]<-substr(txt,capture.start[1,i],
+                            capture.start[1,i]+capture.length[1,i]-1)
+  }
+  
+  gr 
+}
+
+
+captured.groups.list<-function(txt,gpr){
+  capture.start<-attr(gpr,"capture.start")
+  capture.length<-attr(gpr,"capture.length")
+  
+  groups<-colnames(capture.start)
+  gr<-list()
+  for(i in seq_along(groups)){
+    if(groups[i]=="" | capture.length[1,i]==0)
+      next
+    gr[[groups[i]]]<-substr(txt,capture.start[1,i],
+                            capture.start[1,i]+capture.length[1,i]-1)
+  }
+  
+  gr 
+}
+
+captured.groups.dataframe<-function(txt,gpr){
+
+  capture.start<-attr(gpr,"capture.start")
+  capture.length<-attr(gpr,"capture.length")
+  
+  groups<-colnames(capture.start)
+  
+  ks=sum(groups!="")
+  gr=matrix("",nrow = length(gpr),ncol=ks)
+  colnames(gr)=groups[groups!=""]
+  for(j in 1:length(gpr)){
+  k=0
+  vals=c()
+  for(i in seq_along(groups)){
+    if(groups[i]=="")
+      next
+     
+    k=k+1
+    if(capture.length[j,i]>0)
+      gr[j,k]=substr(txt,capture.start[j,i],
+                              capture.start[j,i]+capture.length[j,i]-1)
+   }
+  }
+  gr 
+}
+
+
+perlsplit<-function(x,pat,drop.captured.sgroups.only=TRUE){
+  #expect just one match
+  if(!grepl(pat,x,perl=TRUE))
+    return(x)
+  
+  if(!drop.captured.sgroups.only)
+    return(strsplit(x,pat,perl= TRUE)[[1]])
+  
+  text=gregexpr(pat,x,perl= TRUE)[[1]]
+  
+  cap.start=attr(text,"capture.start")
+  cap.len=attr(text,"capture.length")
+  
+  emptInds=rowSums(cap.start)==0 | rowSums(cap.len)==0
+  
+  cap.start =  cap.start[!emptInds,]
+  cap.len   =    cap.len[!emptInds,]
+  
+  if(is.null(dim(cap.start))){
+    cap.start=matrix(cap.start,nrow=1)
+    cap.len=matrix(cap.len,nrow=1)
+  }
+  
+  if(nrow(cap.start)>1)
+    return(stopp())
+  
+  txtt=character()
+  st=1
+  j=1
+  for(i in 1:ncol(cap.start)){
+    if(cap.len[i]==0)
+      next
+    txtt[j]=substr(x,st,cap.start[i]-1)
+    st=cap.start[i]+cap.len[i]
+    j=j+1
+  }
+  if(st<=nchar(x))
+    txtt[length(txtt)+1]=substr(x,st,nchar(x))
+  
+  txtt
+}
