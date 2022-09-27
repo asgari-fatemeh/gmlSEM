@@ -636,10 +636,10 @@ expand.ellipsis<-function(txt,multiple=FALSE,ignore.first=FALSE,details=FALSE,se
     txt=substring(txt,2)
   }
   
-  # if(!grepl("...",txt,fixed=TRUE)){
-  #   txt=setAttr(txt,sep,prefix)
-  #   return(txt)
-  # }
+  if(!grepl("...",txt,fixed=TRUE)){
+    txt=setAttr(txt,sep,prefix)
+    return(txt)
+  }
   
   txt<-gsub("\\s","",txt,perl=TRUE)
   text<-strsplit(txt,sep,fixed = TRUE)[[1]]

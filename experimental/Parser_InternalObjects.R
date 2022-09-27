@@ -168,6 +168,11 @@ set.vary<-function(lhs,rhs){
 
 add.levels<-function(lev){
   
+  #update level names
+  if(nrow(levels.matrix)>0){
+    colnames(levels.matrix)<<-rownames(levels.matrix)<<-get.alias.lhs(rownames(levels.matrix))
+  }
+  
   if(length(lev)>1){
     for(i in seq_along(lev))
       add.levels(lev[i])
@@ -178,12 +183,12 @@ add.levels<-function(lev){
     return()
   
   lev=trim(lev)
-  lev=get.alias.rhs(lev)
+  lev=get.alias.lhs(lev)
   
   # if(lev=="1")
   #   return()  #Do not add the base level to the matrix
   
-  rn=get.alias.rhs(rownames(levels.matrix))
+  rn=get.alias.lhs(rownames(levels.matrix))
   if(lev %in% rn)
     return()
   
@@ -205,15 +210,16 @@ set.levels.matrix<-function(lhs,rhs){
   
   if(lhs==""||rhs=="")
     return()
-  lhs<-get.alias.rhs(lhs)
+  lhs=get.alias.lhs(lhs)
   if(lhs=="1")
     return()  #ignore the base level
-  rhs<-get.alias.rhs(rhs)
+  rhs=get.alias.lhs(rhs)
   if(rhs=="1")
     stop("gmlSEM error: base level can not be superior to other levels.")
   
+  add.levels(lhs)
   add.levels(rhs)
-  levels.matrix[lhs,rhs]<-1
+  levels.matrix[lhs,rhs]<<-1
 }
 
 get.alias.ind<-function(lbl){
@@ -245,18 +251,15 @@ add.alias<-function(lhs,rhs=NULL,role=NA){
   if(!is.na(role))
     role=match.arg(role,c("PAR","OV","LV"))
   
-  # if(is.null(rhs)){
-  #   inds<-get.alias.ind(lhs)
-  #   
-  #   if(nrow(inds)==0){
-  #     ind<-nrow(all.alias)+1
-  #     all.alias[ind,]<<-NA
-  #     all.alias[ind,1:4]<<-c(lhs,lhs,"",role)
-  #     all.alias$all.forms[[ind]]<<-c(lhs)
-  #   }
-  #   
-  #   return()
-  # }
+  #Removing () and replacing == with single =
+  lhs=trim(gsub("(","",gsub(")","",gsub('"',"",gsub("'","",gsub("={2,}","=",lhs,perl = TRUE),fixed = TRUE),fixed = TRUE),fixed = TRUE),fixed = TRUE))
+  rhs=trim(gsub("(","",gsub(")","",gsub('"',"",gsub("'","",gsub("={2,}","=",rhs,perl = TRUE),fixed = TRUE),fixed = TRUE),fixed = TRUE),fixed = TRUE))
+
+ if(rhs=="1"){
+   #Swap the sides
+   rhs=lhs
+   lhs="1"
+ }
   
   if(lhs==""||rhs=="")
     stop("glmSEM error: null alias can not be set for '",lhs,rhs,"'")

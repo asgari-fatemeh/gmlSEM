@@ -676,7 +676,7 @@ newFamily<-function(fname,
   }
  
   
-  getFamily.latent(fam){
+  getFamily.latent<-function(fam){
     lats=fam$underlying.families
     if(length(lats)==0)
       return(list())
@@ -954,23 +954,27 @@ srt2gmlSEMfamily<-function(str){
     a=str2lang(str)
   }
     
-  args=names(a)
   argslist=list()
-  
   callname=as.character(a[[1]])
-  callname2=getFamilyID(callname)
-  if(!is.na(callname2)){
+  fname=getFamilyID(callname)
+  if(!is.na(fname)){
+    k=1
     callname="extendFamily"
-    argslist[["fname"]]=callname2
+    argslist[[1]]=fname
+    names(argslist)[1]<-"fname"
+  }else{
+    k=0
   }
-    
-  if(length(args)>0)
-    for(i in 1:length(args)){
-      arg=args[i]
-      if(args[i]=="")
-        next
-      
-      argslist[[arg]]=if(is.call(a[[arg]])){srt2gmlSEMfamily(a[[arg]])}else if(is.name(a[[arg]])){enquote(a[[arg]])}else{a[[arg]]}
+  
+  argslist0=as.list(a[-1])
+  
+  if(length(argslist0)>0)
+    for(i in 1:length(argslist0)){
+      # arg=args[i]
+      # if(args[i]=="")
+      #   next
+      argslist[[i+k]]=if(is.call(argslist0[[i]])){srt2gmlSEMfamily(argslist0[[i]])}else if(is.name(argslist0[[i]])){enquote(argslist0[[i]])}else{argslist0[[i]]}
+      names(argslist)[i+k]=names(argslist0)[i]
     }
   
   do.call(callname,argslist)

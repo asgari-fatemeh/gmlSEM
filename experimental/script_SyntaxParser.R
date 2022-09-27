@@ -104,14 +104,10 @@ capture.length=attr(capture.within[[1]],"capture.length")
 capture.start<-attr(capture.within[[1]],"capture.start")
 if(length(capture.start)>0){
   for(i in seq(length(capture.start),1,by=-1)){
-    lev=trim(substring(model.syntax,capture.start[i],capture.start[i]+capture.length[i]-1))
-    
-    add.levels(lev)
     model.syntax<-paste0(substring(model.syntax,1,match.start[i]-1),"@",
                          substring(model.syntax,capture.start[i],capture.start[i]+capture.length[i]-1),
                          substring(model.syntax,match.start[i]+match.length[i]))
   }
-    
 }
 
 #alias: 'as' keyword
@@ -242,10 +238,10 @@ while(TRUE){
       level_text_ml<-trim(substring(model.syntax,capture.start[i],capture.start[i]+capture.length[i]))
       level_text_ml=strsplit(level_text_ml,"\n")[[1]]  #Multi line statement
       for(m in seq_along(level_text_ml)){
-        level_text=trim(level_text_ml[m])
-        level_text<-trim(gsub(" within ","<<",level_text,fixed=TRUE))
+        level_text = trim(level_text_ml[m])
+        level_text = trim(gsub(" within ","<<",level_text,fixed=TRUE))
         
-        rhss <- strsplit(level_text,"<<")[[1]]
+        rhss = strsplit(level_text,"<<")[[1]]
         
         for(i1 in seq_along(rhss)){
           levs.par=levs=levs.in=trim(strsplit(rhss[i1],",")[[1]])
@@ -274,13 +270,47 @@ while(TRUE){
   }  
 }
 
-#Rectify lev names with respect to new aliases
-if(!is.null(nrow(parsedData[["vars.level"]]))){
-  parsedData[["vars.level"]]$level=get.alias.rhs(parsedData[["vars.level"]]$level)
-}
-if(nrow(levels.matrix)>0){
-  colnames(levels.matrix)=rownames(levels.matrix)=get.alias.rhs(rownames(levels.matrix))
-}
+#########################################################
+################# Processing Levels #####################
+  #Rectify lev names with respect to new aliases
+  if(!is.null(nrow(parsedData[["vars.level"]]))){
+    parsedData[["vars.level"]]$level=get.alias.lhs(parsedData[["vars.level"]]$level)
+  }
+  if(nrow(levels.matrix)>0){
+    colnames(levels.matrix)=rownames(levels.matrix)=get.alias.lhs(rownames(levels.matrix))
+  }
+  
+  # Look for any inconsistency in level structure
+  # Levels are consistent if and only if 
+  #  any submatrix of levels.matrix contains a zero row
+  n.levels<-nrow(levels.matrix)
+  for(i in 1:n.levels){
+    cmbn<-combn(1:n.levels,i)
+    for(j in 1:ncol(cmbn)){
+      .subm <- levels.matrix[cmbn[,j],cmbn[,j]]
+      if(i==1){
+        if(.subm==1)
+          stop(paste0("gmlSEM error in levels: ",rownames(.subm)))
+      }else{
+        any_zero<-any(sapply(1:nrow(.subm), function(k){sum(.subm[k,])==0}))
+        if(!any_zero)
+          stop("gmlSEM error: Levels are inconsistent. There is a loop in the level structure")
+      }
+    }
+  }
+  
+  # Constructing Level structure
+  .zeros<-sapply(1:nrow(levels.matrix), function(k){sum(levels.matrix[k,])==0})
+  .levels<- rownames(levels.matrix)[which(.zeros)]
+  for(lev in .levels){
+    levels[[lev]]<-getSubLevels(lev)
+  }
+  
+  ######## Every level has its own conditional covariance structure 
+  covs=list()
+  for(i in )
+
+###########################
 
 
 #marking distributions with tag >>F>>:
@@ -623,44 +653,7 @@ if(LEVEL_OP){
   levels.matrix <- matrix(nrow = 0,ncol = 0)
 }
 
-# Look for any inconsistency in level structure
-# Levels are consistent if and only if 
-#  any submatrix of levels.matrix contains a zero row
-n.levels<-nrow(levels.matrix)
-for(i in 1:n.levels){
-  cmbn<-combn(1:n.levels,i)
-  for(j in 1:ncol(cmbn)){
-    .subm <- levels.matrix[cmbn[,j],cmbn[,j]]
-    if(i==1){
-      if(.subm==1)
-        stop(paste0("gmlSEM error in levels: ",rownames(.subm)))
-    }else{
-      any_zero<-any(sapply(1:nrow(.subm), function(k){sum(.subm[k,])==0}))
-      if(!any_zero)
-        stop("gmlSEM error: Levels are inconsistent. There is a loop in the level structure")
-    }
-  }
-}
 
-getSubLevels<-function(level){
-  levels<-list()
-  .subm<-levels.matrix[,level]
-  if(sum(.subm)==0)
-    return(levels)
-  sub.levels<-rownames(levels.matrix)[which(.subm==1)]
-  
-  for(lev in sub.levels){
-    levels[[lev]]<-getSubLevels(lev)
-  }
-  levels
-}
-
-# Constructing Level structure
-  .zeros<-sapply(1:nrow(levels.matrix), function(k){sum(levels.matrix[k,])==0})
-  .levels<- rownames(levels.matrix)[which(.zeros)]
-  for(lev in .levels){
-    levels[[lev]]<-getSubLevels(lev)
-  }
 
 
 

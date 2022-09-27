@@ -232,4 +232,16 @@ any.intersect<-function(list.of.seqs){
   return(TRUE)
 }
 
+getSubLevels<-function(level){
+  levels<-list()
+  .subm<-levels.matrix[,level]
+  if(sum(.subm)==0)
+    return(levels)
+  sub.levels<-rownames(levels.matrix)[which(.subm==1)]
+  
+  for(lev in sub.levels){
+    levels[[lev]]<-getSubLevels(lev)
+  }
+  levels
+}
 

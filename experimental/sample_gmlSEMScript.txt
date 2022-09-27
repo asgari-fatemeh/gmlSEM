@@ -24,8 +24,8 @@ family: y1,...,y10 binomial(link="logit") copula(type="gaussian")
 #notation to support vector-valued distributions
 #Potential syntax
 family: (x1.1,x1.2,x1.3),...,(x9.1,x9.2,x9.3) ordered()
-family: (x1.1,x1.2,x1.3) as y1,...,(x9.1,x9.2,x9.3) as y9 tobit(type=4)
-family: (x1.1,x1.2,x1.3) as (y11,y12),...,(x9.1,x9.2,x9.3) as (y91,y92) tobit(type=4)
+family: (x1.1,x1.2,x1.3) for y1,...,(x9.1,x9.2,x9.3) for y9 tobit(type=4)
+family: (x1.1,x1.2,x1.3) for (y11,y12),...,(x9.1,x9.2,x9.3) for (y91,y92) tobit(type=4)
 
 family: z1,...,z5 binomial(link="logit")
 family: z6,...,z10 binomial(link="logit")
@@ -132,15 +132,15 @@ size: 100  student
 
 ### repeated measure syntax
 ##rep|repeated|repeated measures or any abbreviations is acceptable
-rep: time within subject
-rep: x1,...,x10 for x
-     y1,...,y10 for y
+#rep: time within subject
+#rep: x1,...,x10 for x
+#     y1,...,y10 for y
 ##You can use naming conventions to give a name to the time index, and to use it later in the models
-rep: x1,...,x10 for x(t)
-     y1,...,y10 for y(s)
+#rep: x1,...,x10 for x(t)
+#     y1,...,y10 for y(s)
 ##or give a same name, if time indices coincides
-rep: x1,...,x10 for x(t)
-     y1,...,y10 for y(t)
+#rep: x1,...,x10 for x(t)
+#     y1,...,y10 for y(t)
      
 ## you can use the lags on the rhs of a measurement or regression model 
 ## with x(-1) or x[-1] or lag(x,1)
@@ -214,12 +214,12 @@ rep: x1,...,x10 for x(t)
 #family: int slope normal()  !Not necessary, since  a normal distribution is assumed by default for variables for which the family is not defined. It will be noticed in an accumulated notice statement.
  
 ## or 
-rep: x1,x2,x3,x4 for x(t)
-x ~ int + slope1*t + slope*(t^2)
+#rep: x1,x2,x3,x4 for x(t)
+#x ~ int + slope1*t + slope*(t^2)
 
 ## or 
-rep: x1,...,x8 for x(t)
-x ~ s(t)  #smooth term as in functional regression
+#rep: x1,...,x8 for x(t)
+#x ~ s(t)  #smooth term as in functional regression
 
 #Ar(q)
 # y ~ y(-1) + y(-2) + x
