@@ -33,6 +33,7 @@ family: z1,...,z10 copula(type="gaussian")
 
 family: fb zoib(link="logit")      #Produce a warning
 family: fz zib(link=c("probit","logit"))
+family: (y11,y12),...,(y51,y52) tobit(type=3)
 
 #also
 family: y1,...,y10
@@ -43,12 +44,13 @@ family: y1,...,y10
 
 
 #Hierarchical cluster/MultiLevel SEM
-level: school 
-       team, class within school
-level: class within school within cities
+   level: prov, ethnic 
+       team, class within school within city
+
+level: class within school within city
 
 level: school(schoolID)
-level: Class (classID) within School (SchoolID)
+level: class (classID) within school (schoolID)
 
 # measurement model
 fb,z         vary at level school
@@ -219,4 +221,12 @@ x ~ int + slope1*t + slope*(t^2)
 rep: x1,...,x8 for x(t)
 x ~ s(t)  #smooth term as in functional regression
 
+#Ar(q)
+# y ~ y(-1) + y(-2) + x
+# y ~ ar(2) + x
+
+
+# The covariance structure 
+# Conidiotnal covariance structure can be defined by a set of predifined cov. str. models, such as 
+# y ~~ MAH(2)
 

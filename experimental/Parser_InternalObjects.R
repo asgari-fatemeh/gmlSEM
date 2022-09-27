@@ -47,19 +47,31 @@ GROUP_OP <- FALSE
 LEVEL_OP <- FALSE
 group<-""
 
+add.vars.to.dictionay<-function(name="",vars.list.1=c(),vars.list.2=c(),family=NULL,copula=NULL){
+  if(name!="")
+    name=get.alias.rhs(name)
+  if(length(vars.list)>0){
+    vars.list=get.alias.rhs(vars.list)
+    N=attr(vars.dictionary,"N")+1
+    attr(vars.dictionary,"N")=N
+    
+  }
+    
+  ind=which(vars.dictionary)
+}
+
 #Parser Output
 vars.dictionary <- data.frame(
-  name         = character() ,
-  alias        = I(list())   ,
-  nameInData   = character() ,
-  nameToPrint  = character() ,
+  name         = character() , 
+  var.list     = I(list())   , #The list of variables for vector-valued r.v. or repeated measures
   appeared.as.fa = logical() , #Appeared as a factor in a measrement model
   appeared.as.re = logical() , #Appeared as a random effect in a regression model
   latent       = logical()   , #NA if needs.data.scan
   response     = logical()   ,
   family       = I(list())   ,
   vary         = character() ,
-  heter        = logical()   ,
+  heter        = logical()   ,  # A heteroskedasticity model?
+  reg.model    = character() ,
   heter.params = I(list())   ,
   heter.vars   = I(list())   ,
   reg.params   = I(list())   ,
@@ -67,6 +79,9 @@ vars.dictionary <- data.frame(
   reg.smooth   = logical()   ,
   depends.on   = I(list())
 )
+
+attr(vars.dictionary,"N")=0
+
 all.alias       <- data.frame(
   lhs=character(),
   rhs=character(),
@@ -103,14 +118,20 @@ set.vary<-function(lhs,rhs){
 }
 
 add.levels<-function(lev){
+  
+  if(length(lev)>1){
+    for(i in seq_along(lev))
+      add.levels(lev[i])
+    return()
+  }
+  
   if(lev=="")
     return()
   
   lev=trim(lev)
   lev=get.alias.rhs(lev)
-  rhs2=get.alias.rhs(lev)
   
-  # if(lev=="1"|rhs2=="1")
+  # if(lev=="1")
   #   return()  #Do not add the base level to the matrix
   
   rn=get.alias.rhs(rownames(levels.matrix))
@@ -125,6 +146,14 @@ add.levels<-function(lev){
 }
 
 set.levels.matrix<-function(lhs,rhs){
+  
+  if(length(lhs)>1){
+    for(i in 1:length(lhs))
+      for(j in 1:length(rhs))
+        set.levels.matrix(lhs[i],rhs[j])
+    return()
+  }
+  
   if(lhs==""||rhs=="")
     return()
   lhs<-get.alias.rhs(lhs)

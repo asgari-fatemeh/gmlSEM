@@ -204,3 +204,32 @@ perlsplit<-function(x,pat,drop.captured.sgroups.only=TRUE){
   
   txtt
 }
+
+
+sep.par<-function(x){
+  capture.level <- gregexpr("(\\b[\\w\\.]+\\b)(?:\\(([\\w\\.]+)\\))?",x, perl=TRUE)
+  capture.start<-attr(capture.level[[1]],"capture.start")
+  capture.length<-attr(capture.level[[1]],"capture.length")
+  rhs1<-substr(rhs,capture.start[i2,1],capture.start[i2,1]+capture.length[i2,1])
+  rhs2<-""
+  if(capture.start[i2,2]>0)
+    rhs2<-substr(rhs,capture.start[i2,2],capture.start[i2,2]+capture.length[i2,2])
+  
+  list(var.out=rhs1,var.in=rhs2)
+}
+
+any.intersect<-function(list.of.seqs){
+  inds=sapply(list.of.seqs, function(x){is.na(x) || is.null(x)})
+  inds=which(!inds)
+  if(length(inds)<=1)
+    return(FALSE)
+  seq=list.of.seqs[[inds[1]]]
+  for(i in 2:length(inds)){
+    if(length(intersect(seq,list.of.seqs[[inds[i]]]))>0)
+      return(FALSE)
+    seq=union(seq,list.of.seqs[[inds[1]]]  )
+  }
+  return(TRUE)
+}
+
+

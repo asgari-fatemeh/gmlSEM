@@ -33,6 +33,9 @@ model.syntax <- gsub("\r\n", "\n", model.syntax, fixed = TRUE)
 model.syntax <- gsub("\n(\\s*\n)?", "\n", model.syntax, perl = TRUE)
 model.syntax <- gsub(pattern = "\u02dc", replacement = "~", model.syntax)
 
+#remove spaces from the begining of the lines
+model.syntax <- gsub("(?<=\n|^)\\s*", "", model.syntax, perl = TRUE)
+
 model.org=model.syntax
 
 # Change block names to simpler  identifiable ones
@@ -100,10 +103,15 @@ match.length=attr(capture.within[[1]],"match.length")
 capture.length=attr(capture.within[[1]],"capture.length")
 capture.start<-attr(capture.within[[1]],"capture.start")
 if(length(capture.start)>0){
-  for(i in seq(length(capture.start),1,by=-1))
+  for(i in seq(length(capture.start),1,by=-1)){
+    lev=trim(substring(model.syntax,capture.start[i],capture.start[i]+capture.length[i]-1))
+    
+    add.levels(lev)
     model.syntax<-paste0(substring(model.syntax,1,match.start[i]-1),"@",
                          substring(model.syntax,capture.start[i],capture.start[i]+capture.length[i]-1),
                          substring(model.syntax,match.start[i]+match.length[i]))
+  }
+    
 }
 
 #alias: 'as' keyword
@@ -154,6 +162,8 @@ if(capture.within[[1]][1]>0){
   capture.length=attr(capture.within[[1]],"capture.length")
   
   if(length(capture.start)>0){
+    LEVEL_OP <- TRUE
+    
     for(i in seq(nrow(capture.start),1,by=-1)){
       if(any(capture.length[i,]==0))
         stop("\ngmlSEM error: invalid syntax in alias statement\n",
@@ -168,15 +178,15 @@ if(capture.within[[1]][1]>0){
       lev.par=lev
       if(grepl("(",lev,fixed = TRUE)){
         levv=captured.groups(lev," *(?'var'.*) *\\( *(?'varn'.*) *\\)")
-        lev=levv$var
-        lev.par=levv$varn
+        lev=trim(levv$var)
+        lev.par=trim(levv$varn)
       }
       
       for(j in 1:length(txtm)){
         if(grepl("(",txtm[j],fixed=TRUE)){
           levv=captured.groups(txtm[j]," *(?'var'.*) *\\( *(?'varn'.*) *\\)")
-          txtm[j]=levv$var
-          txtm.par[j]=levv$varn
+          txtm[j]=trim(levv$var)
+          txtm.par[j]=trim(levv$varn)
         }
       }
     
@@ -198,9 +208,12 @@ if(capture.within[[1]][1]>0){
                            txt,"<<~",lev,
                            substring(model.syntax,capture.start[i,2]+capture.length[i,2]))
       
-      lev=get.alias.lhs(lev)
-      add.alias(lev,lev.par,"OV")
+      add.alias(lev.par,lev,"OV")  #Level is an observed variable
       add.levels(lev)
+      
+      add.alias(txtm.par,txtm)
+      
+      
       
       parsedData[["vars.level"]]=rbind(data.frame(var=txtm,var.inpar=txtm.par,level=lev),
                                        parsedData[["vars.level"]])
@@ -211,8 +224,9 @@ if(capture.within[[1]][1]>0){
 
 
 #'within' keyword in level: command
+#'template allow multi line sdeinition of level structure
 while(TRUE){
-  capture.within <- gregexpr("(?<=>>L>>:)(\\s*[\\w\\.]+ *(?:\\( *[\\w\\.]+ *\\))?)+(?=$|\n)", model.syntax,perl = TRUE,ignore.case =TRUE)
+  capture.within <- gregexpr("(?<=>>L>>:)((?:\\s*,? *[\\w\\.][\\w\\._]* *(?:\\( *[\\w\\.][\\w\\._]* *\\))?)+)(?=$|\n)", model.syntax,perl = TRUE,ignore.case =TRUE)
   if(capture.within[[1]][1]==-1)
     break
   
@@ -221,12 +235,40 @@ while(TRUE){
   match.length<-attr(capture.within[[1]],"match.length")
   match.start<-capture.within[[1]]
   if(length(match.start)>0){
+    
+    LEVEL_OP <- TRUE
+    
     for(i in seq(length(match.start),1,by=-1)){
-      level_text<-substring(model.syntax,capture.start[i],capture.start[i]+capture.length[i])
-      level_text<-gsub(" within ","<<",level_text,fixed=TRUE)
+      level_text_ml<-trim(substring(model.syntax,capture.start[i],capture.start[i]+capture.length[i]))
+      level_text_ml=strsplit(level_text_ml,"\n")[[1]]  #Multi line statement
+      for(m in seq_along(level_text_ml)){
+        level_text=trim(level_text_ml[m])
+        level_text<-trim(gsub(" within ","<<",level_text,fixed=TRUE))
+        
+        rhss <- strsplit(level_text,"<<")[[1]]
+        
+        for(i1 in seq_along(rhss)){
+          levs.par=levs=levs.in=trim(strsplit(rhss[i1],",")[[1]])
+          for(j1 in seq_along(levs.in)){
+            rhs=trim(levs.in[j1])
+            if(grepl("(",rhs,fixed=TRUE)){
+              levv=captured.groups(rhs," *(?'var'.*) *\\( *(?'varn'.*) *\\)")
+              levs[j1]=trim(levv$var)
+              levs.par[j1]=trim(levv$varn)
+            }
+            add.alias(levs.par,levs,"OV")  #Level is an observed variable
+            add.levels(levs)  
+          }
+          
+          if(i1>1)
+            set.levels.matrix(levs.old,levs)
+          levs.old=levs
+        }
+      }
       model.syntax<-paste0(substring(model.syntax,1,capture.start[i]-1),"<<",
                            level_text,
                            substring(model.syntax,match.start[i]+match.length[i]))
+      
     }
     
   }  
@@ -234,10 +276,10 @@ while(TRUE){
 
 #Rectify lev names with respect to new aliases
 if(!is.null(nrow(parsedData[["vars.level"]]))){
-  parsedData[["vars.level"]]$level=get.alias.lhs(parsedData[["vars.level"]]$level)
+  parsedData[["vars.level"]]$level=get.alias.rhs(parsedData[["vars.level"]]$level)
 }
 if(nrow(levels.matrix)>0){
-  colnames(levels.matrix)=rownames(levels.matrix)=get.alias.lhs(rownames(levels.matrix))
+  colnames(levels.matrix)=rownames(levels.matrix)=get.alias.rhs(rownames(levels.matrix))
 }
 
 
@@ -254,10 +296,35 @@ capture.length=as.matrix(capture.length,ncol=3)
 if(nrow(capture.start)>0){
   for(i in seq(nrow(capture.start),1,by=-1)){
     txt2<-""
-    if(capture.start[i,3]>0)
-      txt2<-paste0(">>F>>",substring(model.syntax,capture.start[i,3],capture.start[i,3]+capture.length[i,3]-1))
-    
-      txt1<-paste0(">>F>>",substring(model.syntax,capture.start[i,2],capture.start[i,2]+capture.length[i,2]-1))
+    cop=""
+    fam=""
+    if(capture.start[i,3]>0){
+      cop=trim(substring(model.syntax,capture.start[i,3],capture.start[i,3]+capture.length[i,3]-1))
+      txt2<-paste0(">>F>>",cop)
+      cop=srt2gmlSEMfamily(cop)
+      if(cop$name!="copula"){
+        stop("\ngmlSEM error: Copula was expected at line:\n",
+             substring(model.syntax,1,match.start[i]-1,match.start[i]+match.length[i]))
+      }
+    }
+      
+      fmn=substring(model.syntax,capture.start[i,2],capture.start[i,2]+capture.length[i,2]-1)
+      txt1<-paste0(">>F>>",fmn)
+      fmn=srt2gmlSEMfamily(fmn)
+      if(fmn$name=="copula"){
+        if(txt2!=""){
+          #Two copula statement
+          stop("\ngmlSEM error: Two copula statement is read at line:\n",
+               substring(model.syntax,1,match.start[i]-1,match.start[i]+match.length[i]))
+        }
+        cop=fmn
+        fmn=NULL
+      }
+      
+      if(!is.null(fmn)){
+       n1=fmn$dim  
+       n2=fmn$dim.latent
+      }
       
       seqq=trim(substring(model.syntax,capture.start[i,1],capture.start[i,1]+capture.length[i,1]-1))
       seqq=strsplit(seqq,"\n",fixed = TRUE)[[1]]
@@ -465,19 +532,6 @@ for(i in 1:length(model)) {
     add.alias(lhs,rhs)
   })
   
-  
-  
-  sep.par<-function(x){
-    capture.level <- gregexpr("(\\b[\\w\\.]+\\b)(?:\\(([\\w\\.]+)\\))?",x, perl=TRUE)
-    capture.start<-attr(capture.level[[1]],"capture.start")
-    capture.length<-attr(capture.level[[1]],"capture.length")
-    rhs1<-substr(rhs,capture.start[i2,1],capture.start[i2,1]+capture.length[i2,1])
-    rhs2<-""
-    if(capture.start[i2,2]>0)
-      rhs2<-substr(rhs,capture.start[i2,2],capture.start[i2,2]+capture.length[i2,2])
-    
-    list(var.out=rhs1,var.in=rhs2)
-  }
   
   level=quote({
     

@@ -153,6 +153,7 @@ newFamily<-function(fname,
   if(any(inds)){
     inds=which(inds)
     dim.latent=sum(sapply(inds, function(i)lst[[i]]$dim))
+    nms=names(lst)[inds]
     for(i in seq_along(inds)){
       ind=inds[i]
       nm=names(lst)[ind]
@@ -160,9 +161,13 @@ newFamily<-function(fname,
             if(is.null(%1$s))
               return()
             if(%1$s$dim.latent>0)
-              stop("gmlSEM error: the underlying generating process of the family %2$s cannot no be defined as a latent generating process itself.")
+              stop("gmlSEM error: the underlying generating process for the family %2$s cannot no be defined as a latent generating process itself.")
+             %3$s
             }'
-      fn=eval(str2lang(sprintf(fn,nm,paste0("'",fname[1],"'"))))
+      fn=eval(str2lang(sprintf(fn,
+                               nm,
+                               paste0("'",fname[1],"'"),
+                               paste0("dim.latent=",paste0(nms,"$dim.latent",collapse = "+")))))
       
       k=k+1
       on.args.change[[k]]=fn
@@ -885,5 +890,42 @@ extendFamily<-function(fname,...){
  fam<-fam$extend(fam,...)
  fam
 }
+
+srt2gmlSEMfamily<-function(str){
+  
+  a=str
+  if(!is.call(str)){
+    if(!grepl("(",str,fixed = TRUE))
+      stop("\ngmlSEM error: wrong family call in:\n",str)
+    a=str2lang(str)
+  }
+    
+  args=names(a)
+  argslist=list()
+  
+  callname=as.character(a[[1]])
+  callname2=getFamilyID(callname)
+  if(!is.na(callname2)){
+    callname="extendFamily"
+    argslist[["fname"]]=callname2
+  }
+    
+  if(length(args)>0)
+    for(i in 1:length(args)){
+      arg=args[i]
+      if(args[i]=="")
+        next
+      
+      argslist[[arg]]=if(is.call(a[[arg]])){srt2gmlSEMfamily(a[[arg]])}else if(is.name(a[[arg]])){enquote(a[[arg]])}else{a[[arg]]}
+    }
+  
+  do.call(callname,argslist)
+}
+
+
+# a1=srt2gmlSEMfamily('copula(type="gaus")')
+# a2=srt2gmlSEMfamily('tobit(type=1,family=normal())')
+# a3=srt2gmlSEMfamily("bin(trials=N)")
+# a4=srt2gmlSEMfamily("beta(domain=c(-1,1))")
 
 

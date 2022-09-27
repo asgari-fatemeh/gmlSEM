@@ -17,6 +17,7 @@ get_seq<-function(x,type,ind=length(x)){
   i0<-1
   i1<-ind-1
   i2<-ind
+  
   if(type=="char"){
     xs<-sapply(x, function(xi){as.numeric(charToRaw(xi))})
     a<-head(xs,1)
@@ -41,7 +42,7 @@ get_seq<-function(x,type,ind=length(x)){
         
     
     
-    return(list(list(len=length(letters),seq=letters,amb=FALSE,alternatives=list(letters))))
+    return(list(list(len=length(letters),seq=letters,amb=FALSE,name.pat=".",alternatives=list(letters))))
   }else if(type=="numeric"){
     res=list()
     ri=1
@@ -53,13 +54,17 @@ get_seq<-function(x,type,ind=length(x)){
     
     
     ln=nchar(as.character(abs(xs2[1])))
-    combs=lapply(0:(ln-1), function(l)combn(ln,l))
+    combs=rev(lapply(0:(ln-1), function(l)combn(ln,l)))
     xs2s=paste0(xs2,collapse=",")
     
     for(cl in combs){
       
       for(j in 1:ncol(cl)){
         fixed.inds=cl[,j]
+        name.pat2=strsplit(as.character(abs(xs2[1])),"")[[1]]
+        name.pat=rep(".",length(name.pat2))
+        name.pat[fixed.inds]=name.pat2[fixed.inds]
+        name.pat=paste0(name.pat,collapse = "")
         pat=genPattern(ln,fixed.inds,length(xs2))
         
         if(!grepl(pat,xs2s,perl = TRUE))
@@ -157,7 +162,7 @@ get_seq<-function(x,type,ind=length(x)){
           seq1=paste0(seq1,seqq[[i]])
         }
         
-        res[[ri]]=list(len=lens,seq=seq1)
+        res[[ri]]=list(len=lens,seq=seq1,name.pat=name.pat)
         ri=ri+1
       }
     }
@@ -175,6 +180,7 @@ get_seq<-function(x,type,ind=length(x)){
   res2=list(res[[1]])
   res2[[1]]$amb=FALSE
   res2[[1]]$alternatives=list(res[[1]]$seq)
+  res2[[1]]$name.pat=res[[1]]$name.pat
   jj=1
   
   if(length(res)>1){
@@ -253,7 +259,7 @@ genPattern<-function(x1len,fixed.inds=c(),seq_leng=2,sep=","){
   pat
 }
 
-setAttr<-function(txt,sep,prefix=""){
+setAttr<-function(txt,sep,prefix="",df=NULL,common.name=""){
   txts=strsplit(txt,sep,fixed=TRUE)[[1]]
   if(prefix!="")
     txt=paste0(prefix,txt)
@@ -261,13 +267,19 @@ setAttr<-function(txt,sep,prefix=""){
   attr(txt,"n1")=length(txts)
   attr(txt,"n2")=0
   attr(txt,"mat")=matrix(txts,ncol=1)
+  if(common.name=="" && !is.null(df))
+    common.name=paste0(sapply(1:nrow(df), function(i)ifelse(df$fixed[i],df[i,ncol(df)],".")),collapse = "")
+  
+  attr(txt,"common.name")=common.name
   txt
 }
 
 
 ################### Expanding ellipsis ##########################
 #################################################################
-expand.ellipsis<-function(txt,multiple=FALSE,ignore.first=FALSE,details=FALSE,sep=""){
+expand.ellipsis<-function(txt,multiple=FALSE,ignore.first=FALSE,details=FALSE,sep="",
+                          allow.duplicate=FALSE #Allow duplicate elements in vector sequences
+                          ){
   
   return.longest.possbile=TRUE  #Change it to FALSE if you want the shortest possible match
   
@@ -402,6 +414,7 @@ expand.ellipsis<-function(txt,multiple=FALSE,ignore.first=FALSE,details=FALSE,se
     
     mat=matrix(".",nrow = length(text),ncol=n1+n2 )
     
+    
     if(!grepl("...",txt,fixed=TRUE)){
       for(i in 1:length(text)){
         txt0=perlsplit(text[i],latPatKeywordIdent)
@@ -423,7 +436,7 @@ expand.ellipsis<-function(txt,multiple=FALSE,ignore.first=FALSE,details=FALSE,se
       attr(txt,"n1")=n1
       attr(txt,"n2")=n2
       attr(txt,"mat")=mat
-      
+      attr(txt,"common.name")=""
       return(txt)
     }
     
@@ -464,7 +477,7 @@ expand.ellipsis<-function(txt,multiple=FALSE,ignore.first=FALSE,details=FALSE,se
     lens2=sort(unique(unlist(lapply(res, function(r)if(r[[2]]$failed){NA}else{r[[2]]$lens}))))
     
     if(is.null(lens2)){
-      lens2=c()
+      lens2=integer(0)
     }
     
     for(i in seq_along(res)){
@@ -472,18 +485,51 @@ expand.ellipsis<-function(txt,multiple=FALSE,ignore.first=FALSE,details=FALSE,se
         next
       
       lens1=intersect(lens1,res[[i]][[1]]$lens)
-      if(!is.null(lens2))
+      if(length(lens2)>0)
         lens2=intersect(lens2,res[[i]][[2]]$lens)
     }
     
-    if(return.longest.possbile){
-      #Return the longest possible sequence
-      lens1=sort(lens1,decreasing = TRUE)[1]
-      lens2=ifelse(length(lens2)>0,sort(lens2,decreasing = TRUE)[1],NA)
+    if(allow.duplicate){
+      if(return.longest.possbile){
+        #Return the longest possible sequence
+        lens1=sort(lens1,decreasing = TRUE)[1]
+        lens2=ifelse(length(lens2)>0,sort(lens2,decreasing = TRUE)[1],NA)  
+      }else{
+        #Return the shortes possible sequence
+        lens1=sort(lens1,decreasing = FALSE)[1]
+        lens2=ifelse(length(lens2)>0,sort(lens2,decreasing = FALSE)[1],NA)   
+      }
     }else{
-      #Return the shortes possible sequence
-      lens1=sort(lens1,decreasing = FALSE)[1]
-      lens2=ifelse(length(lens2)>0,sort(lens2,decreasing = FALSE)[1],NA)   
+      if(return.longest.possbile){
+        #Return the longest possible sequence
+        lens11=sort(lens1,decreasing = TRUE)
+        lens22=if(length(lens2)>0){sort(lens2,decreasing = TRUE)}else{NA}
+      }else{
+        #Return the shortest possible sequence
+        lens11=sort(lens1,decreasing = FALSE)
+        lens22=if(length(lens2)>0){sort(lens2,decreasing = FALSE)}else{NA}
+      }
+        lens1=lens2=NA
+        ki=1
+        for(jm in rev(seq_along(lens11))){
+          lens=lens11[jm]
+          seqs=lapply(res, function(r)if(r[[ki]]$failed){NA}else{r[[ki]]$seqs[[which(sapply(r[[ki]]$seqs,function(s)s$len==lens))[1]]]})
+          if(!any.intersect(seqs)){
+            lens1=lens
+            break
+          }
+        }
+        ki=2
+        if(length(lens2)>0)
+        for(jm in rev(seq_along(lens22))){
+          lens=lens22[jm]
+          seqs=lapply(res, function(r)if(r[[ki]]$failed){NA}else{r[[ki]]$seqs[[which(sapply(r[[ki]]$seqs,function(s)s$len==lens))[1]]]})
+          if(!any.intersect(seqs)){
+            lens2=lens
+            break
+          }
+        }
+      
     }
     
     
@@ -590,10 +636,10 @@ expand.ellipsis<-function(txt,multiple=FALSE,ignore.first=FALSE,details=FALSE,se
     txt=substring(txt,2)
   }
   
-  if(!grepl("...",txt,fixed=TRUE)){
-    txt=setAttr(txt,sep,prefix)
-    return(txt)
-  }
+  # if(!grepl("...",txt,fixed=TRUE)){
+  #   txt=setAttr(txt,sep,prefix)
+  #   return(txt)
+  # }
   
   txt<-gsub("\\s","",txt,perl=TRUE)
   text<-strsplit(txt,sep,fixed = TRUE)[[1]]
@@ -604,17 +650,18 @@ expand.ellipsis<-function(txt,multiple=FALSE,ignore.first=FALSE,details=FALSE,se
   foundEllip<-FALSE
   AddedNextElem<-FALSE
   ki<-which(text=="...")[1]
-  if(ki==1|ki==length(text))
+  if(!is.na(ki) && (ki==1|ki==length(text)))
     return(stopp())
-  ki<-max(ki-2,1)
+  ki=max(ki-2,1)
+  ki2=ifelse(is.na(ki),1,ki)
   prefix<-paste0(prefix,
-                 ifelse(ki==1,"",paste0(paste0(text[1:(ki-1)],collapse=sep),sep)))
+                 ifelse(is.na(ki) || ki==1,"",paste0(paste0(text[1:(ki-1)],collapse=sep),sep)))
   
   
   
   suffix<-""
   i<-0
-  for(ik in ki:length(text)){
+  for(ik in ki2:length(text)){
     i<-i+1
     txt<-text[ik]
     if(txt=="..."){
@@ -677,7 +724,10 @@ expand.ellipsis<-function(txt,multiple=FALSE,ignore.first=FALSE,details=FALSE,se
   k<-0
   kk<-ncol(df)
   kkk<-ifelse(ignore.first,1,0)
-  for(i in seq_along(elems)[-ellipsis.idx]){
+  seq_elems= seq_along(elems)
+  if(!is.na(ki))
+    seq_elems=seq_elems[-ellipsis.idx]
+  for(i in seq_elems){
     k<-k+1
     el<-elems[[i]]
     df[,k+kk]<-NA
@@ -713,12 +763,20 @@ expand.ellipsis<-function(txt,multiple=FALSE,ignore.first=FALSE,details=FALSE,se
   # }
   
   # seqq=rep("",len)
+  
+  if(is.na(ki)){  #No ellipsis to expand
+    txt=setAttr(txt,sep,prefix,df=df)
+    return(txt)
+  }
+  
   seqqs=list()
   lens=list()
+  common.name=""
   for(i in 1:nrow(df)){
     if(df$fixed[i]){
       #seqq<-paste0(seqq,df[i,ncol(df)])
       seqqs[[i]]=list(fixed=TRUE,lens=NA,val=df[i,ncol(df)],res=list())
+      common.name=paste0(common.name,df[i,ncol(df)])
       lens[[i]]=NA
     }else{
       tryCatch({
@@ -729,6 +787,7 @@ expand.ellipsis<-function(txt,multiple=FALSE,ignore.first=FALSE,details=FALSE,se
       # if(length(seq2)!=len)
       #   return(stopp())
       #seqq<-paste0(seqq,seq2)
+      common.name=paste0(common.name,seq2$common.name)
       
       lens[[i]]=sapply(seq2, function(s)s$len)
       seqqs[[i]]=list(fixed=FALSE,lens=lens[[i]],val=NA,res=seq2)
@@ -755,7 +814,7 @@ expand.ellipsis<-function(txt,multiple=FALSE,ignore.first=FALSE,details=FALSE,se
       if(x$fixed){
         ls=list()
         for(di in seq_along(d)){
-          ls[[di]]=list(amb=FALSE,seq=rep(x$val,d[di]),seqamb=rep(x$val,d[di]))
+          ls[[di]]=list(amb=FALSE,name.pat=x$val,seq=rep(x$val,d[di]),seqamb=rep(x$val,d[di]))
         }
         return(ls)
       }
@@ -767,27 +826,30 @@ expand.ellipsis<-function(txt,multiple=FALSE,ignore.first=FALSE,details=FALSE,se
         ind2=1
         if(length(x$res[[ind]]$alternatives)>1)
           ind2=2
-        ls[[di]]=list(amb=x$res[[ind]]$amb,seq=x$res[[ind]]$seq,seqamb=x$res[[ind]]$alternatives[[ind2]])
+        ls[[di]]=list(amb=x$res[[ind]]$amb,name.pat=x$res[[ind]]$name.pat,seq=x$res[[ind]]$seq,seqamb=x$res[[ind]]$alternatives[[ind2]])
       }
       ls
     })
     
     res=list()
+    
     for(di in seq_along(d)){
       amb=FALSE
       seq=""
       seqamb=""
+      name.pat=""
       for(i in 1:length(xs2)){
         amb=amb||xs2[[i]][[di]]$amb
         seq=paste0(seq,xs2[[i]][[di]]$seq)
         seqamb=paste0(seqamb,xs2[[i]][[di]]$seqamb)
+        name.pat=paste0(name.pat,xs2[[i]][[di]]$name.pat)
       }
       if(ignore.first){
         seq=c(elems[[1]]$txt,seq)
         seqamb=c(elems[[1]]$txt,seqamb)
       }
       
-      res[[di]]=list(amb=amb,len=length(seq),seq=seq,seqamb=seqamb)
+      res[[di]]=list(amb=amb,len=length(seq),seq=seq,seqamb=seqamb,common.name=name.pat)
     }
     res
   }
@@ -805,6 +867,7 @@ expand.ellipsis<-function(txt,multiple=FALSE,ignore.first=FALSE,details=FALSE,se
     
     
     seqq=res[[ind]]$seq
+    common.name=res[[ind]]$common.name
   }else{
     if(ignore.first)
       return(res)
@@ -849,7 +912,7 @@ expand.ellipsis<-function(txt,multiple=FALSE,ignore.first=FALSE,details=FALSE,se
   
   
   if(!details)
-    txt=setAttr(txt,sep)
+    txt=setAttr(txt,sep,df=df,common.name=common.name)
   return(txt)
   
 }
