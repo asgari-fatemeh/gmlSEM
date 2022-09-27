@@ -1,3 +1,5 @@
+# An important restriction for the simplicity of problems.
+# Phantoms are unidimensional and cannot be generated with latent processes themselves.
 
 ## As a fundamental rule: Dist specific arguments maybe quoted for lazy loadings,
 # The name must be aware of that, and to evaluate the params run time
@@ -85,7 +87,7 @@ setMethod("initialize", "support",
 
 
 newSupport<-function(type=c("interval","discrete"),
-               support=NULL,
+               support=c(-Inf,Inf),
                include.lhs=FALSE,include.rhs=FALSE,
                is.integer=FALSE){
   include.lhs=1*include.lhs
@@ -136,6 +138,7 @@ newFamily<-function(fname,
                     link.scale=NULL,
                     on.args.change=NULL,
                     args.mandatory=NULL, #name of arguments with no default values that must be supplemented in a gmlSEM syntax
+                    underlying.families=character(), #list of underlying family arguments
                     ...){
   gmlSEMfamily.classname<-"gmlSEMfamily"
   
@@ -153,7 +156,7 @@ newFamily<-function(fname,
   if(any(inds)){
     inds=which(inds)
     dim.latent=sum(sapply(inds, function(i)lst[[i]]$dim))
-    nms=names(lst)[inds]
+    nms=underlying.families=names(lst)[inds]
     for(i in seq_along(inds)){
       ind=inds[i]
       nm=names(lst)[ind]
@@ -162,12 +165,16 @@ newFamily<-function(fname,
               return()
             if(%1$s$dim.latent>0)
               stop("gmlSEM error: the underlying generating process for the family %2$s cannot no be defined as a latent generating process itself.")
-             %3$s
+      
+            if(%1$s$dim>1)
+              stop("gmlSEM error: the phnatom variables in the generating process for the family %2$s must be unidemensional variables.")
+      
+             dim.latent=sum(sapply(underlying.families,function(s){x=get(s);x$dim.latent}))
             }'
       fn=eval(str2lang(sprintf(fn,
                                nm,
-                               paste0("'",fname[1],"'"),
-                               paste0("dim.latent=",paste0(nms,"$dim.latent",collapse = "+")))))
+                               paste0("'",fname[1],"'"))))
+                               #,paste0("dim.latent=",paste0(nms,"$dim.latent",collapse = "+")))))
       
       k=k+1
       on.args.change[[k]]=fn
@@ -213,9 +220,8 @@ newFamily<-function(fname,
   
   #Family specific arguments are exposed
   args.exposed=names(list(...)) 
-    #arguments truncated,censored,categorized, and inflated are always exposed
-  args.exposed<-unique(c(args.exposed,"truncated","censored",
-                         "categorized","inflated",args.exposed))
+    #arguments truncated,censored, and inflated are always exposed
+  args.exposed<-unique(c(args.exposed,"truncated","censored","inflated",args.exposed))
   
   if(is.null(link.mean)||length(link.mean)==0){
     args.exposed<-setdiff(args.exposed,c("link.mean","link"))
@@ -311,15 +317,6 @@ newFamily<-function(fname,
              paste0("'",paste0(gmlSEMfamily.obj$link.scale,sep="'",collapse=", "),"'"))
     }
     
-    ###############################
-    # Looking for quote arguments and register them in env
-    # both 'name' and 'call' arguments can be accepted
-    
-    # if(any(sapply(lst, function(x)is.call(x)))){
-    #   lst1=which(lapply(lst, function(x)is.call(x)))
-    #   lst1=paste0(names(lst1),collapse = ",")
-    #   stop("gmlSEM error: you can not pass call to the the distribution name '",gmlSEMfamily.obj$name,"' arg(s):",lst1)
-    # }
     
     inds=sapply(lst, function(x) is.call(x) || is.name(x))
     
@@ -331,9 +328,6 @@ newFamily<-function(fname,
       fix.parts=intersect(gmlSEMfamily.obj$args.exposed,fix.parts)
       
       gmlSEMfamily.obj$runtime.pars=runtime.pars
-        #setdiff(
-        #unique(c(gmlSEMfamily.obj$runtime.pars,runtime.pars)),
-        #fix.parts)
       
       for(i in  seq_along(runtime.pars)){
         s=runtime.pars[i]
@@ -356,16 +350,57 @@ newFamily<-function(fname,
         }
           
       }
-        
-      
-        
       
       gmlSEMfamily.obj=updateArg(gmlSEMfamily.obj,...)
     
+      
+      
+      ## Updating runtime.pars.data.frame
+      runtime.pars.data.frame=data.frame(obj.name=character(),arg.name=character(),var.name=character())
+      k=0
+      ev=gmlSEMfamily.obj$env
+      ev.args.names=names(ev)
+      for(je in seq_along(ev.args.names)){
+        k=k+1   
+        runtime.pars.data.frame[k,]<-c("",ev.args.names[je],as.character(ev[[ev.args.names[je]]]$quoteValue))
+      }
+      
+      for(e in gmlSEMfamily.obj$underlying.families){
+        if(gmlSEMfamily.classname %in% class(gmlSEMfamily.obj[[e]])){
+          ev=gmlSEMfamily.obj[[e]]$env
+          ev.args.names=names(ev)
+          for(je in seq_along(ev.args.names)){
+            k=k+1   
+            runtime.pars.data.frame[k,]<-c(e,ev.args.names[je],as.character(ev[[ev.args.names[je]]]$quoteValue))
+          }
+        }
+      }
+      
+      gmlSEMfamily.obj$runtime.pars.data.frame=runtime.pars.data.frame
+      
+      #Rectify exposed arguments based on modified list of underlying families
+      #Remove any argument of class gmlSEMfamily from exposed list and add underlying.families
+      
+      famArgs=sapply(names(gmlSEMfamily.obj), function(n){gmlSEMfamily.classname %in% class(gmlSEMfamily.obj[[n]])})
+      famArgs=names(famArgs[which(famArgs)])
+      
+      gmlSEMfamily.obj$args.exposed=unique(union(setdiff(gmlSEMfamily.obj$args.exposed,famArgs),gmlSEMfamily.obj$underlying.families))
+      
+      ## Check another time that if all the arguments match the exposed arguments
+      lst.names=names(list(...))
+      lst.names2=lst.names[!lst.names%in%gmlSEMfamily.obj$args.exposed]
+      
+      if(length(lst.names2)>0)
+        stop("gmlSEM error: invalid argument(s) '",
+             paste0(lst.names2,collapse=", "),"' passed to the family: ",
+             gmlSEMfamily.obj$name)
+      
     
       gmlSEMfamily.obj[['extend']]=NULL #Do not allow deeper extensions
       gmlSEMfamily.obj
   }
+  
+  
 
   setRunTimeParams<-function(gmlSEMfamily.obj,...){
     lst=list(...)
@@ -420,6 +455,8 @@ newFamily<-function(fname,
            gmlSEMfamily.obj$name)
     
 
+    gmlSEMfamily.obj=modifyList(gmlSEMfamily.obj,lst)
+    
         
       on.argc.trig.inds=gmlSEMfamily.obj$registeredArg(gmlSEMfamily.obj,lst)
       on.argc.trig=length(on.argc.trig.inds)>0
@@ -639,10 +676,25 @@ newFamily<-function(fname,
   }
  
   
+  getFamily.latent(fam){
+    lats=fam$underlying.families
+    if(length(lats)==0)
+      return(list())
+    
+    lapply(lats, function(l)fam[[l]])
+  }
+  
+  getSupport.latent<-function(fam){
+    lats=fam$underlying.families
+    if(length(lats)==0)
+      return(list())
+    
+    lats=lapply(lats, function(l)fam[[l]]$getSupportObject(fam[[l]]))
+    fam$getSupport(lats)
+  }
+  
   getSupport<-function(fam){
     
-    supps=list(a=NA,b=NA,vals=NA,discrete=FALSE,integer=FALSE,inflated=FALSE)
-    attrs=list(a="",b="")
     
     #If distribution is vector-valued then we return a list of supports whose elements are support of each dimension
     if("support"%in%class(fam)){
@@ -660,11 +712,27 @@ newFamily<-function(fname,
     
     supps.list=list()
     for(n.i in 1:n.f){
+      
       dom=dom1[[n.i]]
+      supps=list(a=NA,b=NA,vals=numeric(),discrete=FALSE,integer=FALSE,inflated=FALSE,inflated.vals=numeric())
+      attrs=list(a="",b="")
       
       if(dom@type=="discrete"){
-        supps$vals=supp=dom@support
+        supps$vals=supp=sort(dom@support)
         supps$discrete=TRUE
+        
+        if(!is.logical(fam$truncated[1]))
+          supp=supp[supp>=fam$truncated[1] & supp<=fam$truncated[2]]
+        if(!is.logical(fam$censored[1]))
+          supp=supp[supp>=fam$censored[1] & supp<=fam$censored[2]]
+        
+        if(!is.logical(fam$truncated[1]) || !is.logical(fam$censored[1])){
+          supps$vals=supp
+          supps$discrete=TRUE
+        }
+        
+        if(all(floor(supp)==supp))
+          supps$integer=TRUE
       }
       
       
@@ -692,53 +760,40 @@ newFamily<-function(fname,
           supps$discrete=FALSE
         }
         
+        #A necessary modification to boundaries
         if(dom@is.integer==1){
           supps$discrete=TRUE
           supps$integer=TRUE
-          supps$a=ceiling(supps$a)
-          supps$a=floor(supps$b)
+          
+          # supps$a=ceiling(supps$a)
+          # supps$b=floor(supps$b)
+          
+          supps$a=ifelse(ceiling(supps$a)==supps$a && attrs$a=="(",supps$a+1,ceiling(supps$a))
+          supps$b=ifelse(floor(supps$b)==supps$b && attrs$b==")",supps$b-1,floor(supps$b))
+          
           attrs$a=ifelse(!is.infinite(supp[1]),"[","(")
           attrs$b=ifelse(!is.infinite(supp[2]),"]",")")
         }
         
         
-      }else{
-        if(!is.logical(fam$truncated[1]))
-          supp=supp[supp>=fam$truncated[1] & supp<=fam$truncated[2]]
-        if(!is.logical(fam$censored[1]))
-          supp=supp[supp>=fam$censored[1] & supp<=fam$censored[2]]
-        
-        if(!is.logical(fam$truncated[1]) || !is.logical(fam$censored[1])){
-          supps$vals=supp
-          supps$discrete=TRUE
-        }
-        
-        if(all(floor(supp)==supp))
-          supps$integer=TRUE
       }
-      
-      if(!is.logical(fam$categorized[1])){
-        
-        supp=fam$categorized
-        supps$vals=supp
-        supps$discrete=TRUE
-        
-        if(all(floor(supp)==supp))
-          supps$integer=TRUE
-        
-      }
-      
       
       if(!is.logical(fam$inflated[1])){
         supps$inflated=TRUE
-        if(supps$discrete){
-          supp=unique(c(supp,fam$inflated))  
-          supp=sort(supp)
-          supps$vals=supp
-        }else{
-          supp=sort(supp)
-          supps$vals=attr(supp,"inflated")=fam$inflated
-        }
+        supps$inflated.vals=fam$inflated
+        
+        supp=unique(c(supps$vals,fam$inflated))  
+        supp=sort(supp)
+        supps$vals=supp
+        
+        # if(supps$discrete){
+        #   supp=unique(c(supps$vals,fam$inflated))  
+        #   supp=sort(supp)
+        #   supps$vals=supp
+        # }else{
+        #   supps$vals=sort(supps$vals)
+        #   attr(supps$vals,"inflated")=fam$inflated
+        # }
       }
       
       supps$atag=attrs$a
@@ -747,8 +802,8 @@ newFamily<-function(fname,
       supps.list[[n.i]]=supps
     }
     
-    if(n.f==1)
-      supps.list=supps.list[[1]]
+    # if(n.f==1)
+    #   supps.list=supps.list[[1]]
     
     supps.list
   }
@@ -767,6 +822,8 @@ newFamily<-function(fname,
            getSupportObject   = support2   ,
            getParamsObject    = params2    ,
            getSupport         = getSupport ,
+           getSupport.latent  = getSupport.latent ,
+           getFamily.latent   = getFamily.latent ,
            
            ########## Important functions and slots ###########
            updateArg          = updateArg        ,  #update dist specific args on runtime
@@ -784,7 +841,6 @@ newFamily<-function(fname,
            args.mandatory=args.mandatory,
            truncated     = FALSE       ,
            censored      = FALSE       ,
-           categorized   = FALSE       ,
            inflated      = FALSE       ,
            ...                         , 
            #... are specific name parameters such as include_zero in geom() disrtribution, or
@@ -798,7 +854,8 @@ newFamily<-function(fname,
            invalidated   = FALSE       ,
            call          = call        ,
            nls.onargc    = nls.onargc  ,
-           registeredArg = registeredArg
+           registeredArg = registeredArg,
+           underlying.families = underlying.families
            )
   
   
@@ -819,9 +876,6 @@ newFamily<-function(fname,
     
     if(length(fam$runtime.pars)>0)
       fam=resolve.symbols(fam)
-    
-    if(!is.logical(fam$categorized[1]))
-      return(TRUE)
     
       dom=fam$getSupportObject(fam)
       if(dom@type=="discrete")
@@ -851,9 +905,9 @@ newFamily<-function(fname,
      supps=fam$getSupport(fam)$vals
   }
   
-  fn$is.in.support<-function(fam,val){
+  fn$is.in.support<-function(fam,val,dim=1){
     
-    supps=fam$getSupport(fam)
+    supps=fam$getSupport(fam)[[dim]]
     if(val%in%supps$vals)
       return(TRUE)
     

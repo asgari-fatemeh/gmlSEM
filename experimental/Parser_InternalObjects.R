@@ -47,40 +47,89 @@ GROUP_OP <- FALSE
 LEVEL_OP <- FALSE
 group<-""
 
-add.vars.to.dictionay<-function(name="",vars.list.1=c(),vars.list.2=c(),family=NULL,copula=NULL){
-  if(name!="")
-    name=get.alias.rhs(name)
-  if(length(vars.list)>0){
-    vars.list=get.alias.rhs(vars.list)
-    N=attr(vars.dictionary,"N")+1
-    attr(vars.dictionary,"N")=N
-    
+add.vars.to.dictionay<-function(mat, # matrix of variable names. Extracted from 'mat' atr. of the output of expand.ellipsis
+                                family=NULL,copula=NULL){
+  
+  n1=family$dim
+  n2=family$dim.latent
+  
+  dm=dim(mat)
+  
+  if(dm!=n1 && dm!=(n1+n2)){
+    return("Dimension mismatch")
   }
+  
+  tryCatch({
+    for(i in 1:nrow(mat)){
+      
+      nm=get.alias.lhs(mat[i,])
+      
+      k=nrow(vars.dictionary)+1
+      vars.dictionary               [k,] <<- NA
+      vars.dictionary$id            [k]  <<- k
+      vars.dictionary$name         [[k]] <<- nm
+      vars.dictionary$dim           [k]  <<- n1
+      vars.dictionary$dim.latent    [k]  <<- n2
+      vars.dictionary$support      [[k]] <<- family$getSupport(family)
+      vars.dictionary$is.phantom    [k]  <<- FALSE
+      vars.dictionary$family       [[k]] <<- family
+      vars.dictionary$hyper.params [[k]] <<- family$runtime.pars.data.frame
+      
+      if(dm>n1){
+        supps=family$getSupport.latent(family)
+        fams=family$getFamily.latent(family)
+        
+        for(j in n1:(n1+n2)){
+          k=nrow(vars.dictionary)+1
+          nm=get.alias.lhs(mat[i,j])
+          
+          vars.dictionary               [k,] <<- NA
+          vars.dictionary$id            [k]  <<- k
+          vars.dictionary$name         [[k]] <<- nm
+          vars.dictionary$dim           [k]  <<- 1
+          vars.dictionary$dim.latent    [k]  <<- 0
+          vars.dictionary$support      [[k]] <<- list(supps[[j-n1+1]])
+          vars.dictionary$is.phantom    [k]  <<- TRUE
+          vars.dictionary$latent        [k]  <<- TRUE
+          vars.dictionary$phantom.for   [k]  <<- k-1
+          vars.dictionary$family       [[k]] <<- list(fams[[j-n1+1]])
+          vars.dictionary$hyper.params [[k]] <<- fams[[j-n1+1]]$runtime.pars.data.frame
+        }
+      }
+    }
     
-  ind=which(vars.dictionary)
+  },error=function(e){
+    return(paste0("Parser internal error: ",e))
+  })
+    
+  return(TRUE)
 }
 
 #Parser Output
+# for each family with a latent generating process, two records are added pointing to each other. One for the observed variable(s), and one for the latent phantom variable(s)
+# The phantom record will not be included if it is not named in the family: block
 vars.dictionary <- data.frame(
-  name         = character() , 
-  var.list     = I(list())   , #The list of variables for vector-valued r.v. or repeated measures
-  appeared.as.fa = logical() , #Appeared as a factor in a measrement model
-  appeared.as.re = logical() , #Appeared as a random effect in a regression model
-  latent       = logical()   , #NA if needs.data.scan
-  response     = logical()   ,
+  id           = integer()   ,
+  name         = I(list())   , #the name of variable (or vector of variables) 
+  dim          = integer()   ,
+  dim.latent   = integer()   ,
+  support      = I(list())   , # Support of random variable(s)
+  is.phantom   = logical()   , #Phantom variables are simply latent variables defines the generating process of a family of distributions
+  latent       = logical()   , #NA if needs.data.scan. TRUE for phantom variables.
+  phantom.for  = integer()   , #if the variable (or vector of variables) are phantom, to which row they belongs to
   family       = I(list())   ,
-  vary         = character() ,
-  heter        = logical()   ,  # A heteroskedasticity model?
+  hyper.params = I(list())   , # A named list of hyper parameters e.g. list(argname=varname) which the family of distribution depends on e.g. list("trials"="N") for bin(trials=N)
+                               # Hyper parameters must the be resolved either in the data frame or the syntax environment
+  appeared.as.fac = logical() , #Appeared as a factor in a measurement model
+  appeared.as.ran = logical() , #Appeared as a random effect in a regression model
+  appeared.as.res = logical() , #Appeared as a response in a regression model
+  appeared.as.res.h = logical() , #Appeared as a response in a het. reg. model
+  
+  vary         = character() ,  # The level at which the variable(s) vary. NA if needs more speculation
   reg.model    = character() ,
-  heter.params = I(list())   ,
-  heter.vars   = I(list())   ,
-  reg.params   = I(list())   ,
-  reg.vars     = I(list())   ,
-  reg.smooth   = logical()   ,
-  depends.on   = I(list())
+  heter.model  = I(list())   
 )
 
-attr(vars.dictionary,"N")=0
 
 all.alias       <- data.frame(
   lhs=character(),

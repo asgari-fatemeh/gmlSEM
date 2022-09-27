@@ -125,8 +125,14 @@ gmlSEMfamilies[["beta"]]<-newFamily(family.alias[["beta"]],
                                     })
 
 f11<-extendFamily("beta",domain=c(-1,1),censored=c(0,1),inflated=0)
+f11$getSupport(f11)
+
 f11<-extendFamily("beta",domain=c(-1,1),inflated=0)
 f11$getSupport(f11)
+
+f11<-extendFamily("beta",censored=c(-1,1))
+f11$getSupport(f11)
+
 f11$is.in.support(f11,1)
 
 
@@ -223,30 +229,52 @@ gmlSEMfamilies[["tobit"]]<-newFamily("tobit",
                                       params = c(mu=family.links[["discrete"]]$link.mean),
                                       dim=1,
                                       type=1,
+                                      support=newSupport("interval"),
+                                     
                                       family=extendFamily("normal"),
                                       family1=extendFamily("normal"),
                                       family2=extendFamily("normal"),
                                       family3=extendFamily("normal"),
                                        on.args.change = list(function(type){
-                                         if(type==1 || type==2){
+                                         if(type==1){
                                            dim=1
-                                           dim.latent=type
+                                           support=newSupport("interval")
+                                           
+                                           dim.latent=1
+                                           underlying.families=c("family")
+                                         }else if(type==2){
+                                           dim=1
+                                           support=newSupport("interval")
+                                           
+                                           dim.latent=2
+                                           underlying.families=c("family1","family2")
                                          }else if(type==3){
-                                           dim=dim.latent=2
+                                           dim=2
+                                           support=list(newSupport("interval"),newSupport("interval"))
+                                           
+                                           dim.latent=2
+                                           underlying.families=c("family1","family2")
                                          }else if(type==4){
                                            dim=3
+                                           support=list(newSupport("interval"),newSupport("interval"),newSupport("interval"))
+                                           
                                            dim.latent=3
+                                           underlying.families=c("family1","family2","family3")
                                          }else if(type==5){
                                            dim=2
+                                           support=list(newSupport("interval"),newSupport("interval"))
+                                           
                                            dim.latent=3
+                                           underlying.families=c("family1","family2","family3")
                                          }else{
                                            stop("gmlSEM error: type must be a value of 1,2,..,5 in Tobit model")
                                          }
-                                       },
-                                       function(domain){
-                                         
                                        })
                                      )
+
+ft=extendFamily("tobit",type=1)
+ft$getSupport(ft)
+ft$getSupport.latent(ft)
 
 
 gmlSEMfamilies2<-list(
