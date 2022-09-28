@@ -47,63 +47,157 @@ GROUP_OP <- FALSE
 LEVEL_OP <- FALSE
 group<-""
 
-add.vars.to.dictionay<-function(mat, # matrix of variable names. Extracted from 'mat' atr. of the output of expand.ellipsis
+add.vars.to.dictionay<-function(mat, # matrix of variable names. Extracted from 'mat' attribute of the output of expand.ellipsis()
+                                     # dim(mat)=n1 or dim(mat)=n1+n2, where n1=family$dim, n2=family$dim.latent
                                 family=NULL,copula=NULL){
+  if(!is.matrix(mat))
+    mat=matrix(mat,ncol=1)
   
-  n1=family$dim
-  n2=family$dim.latent
+  levels=matrix("",nrow = nrow(mat),ncol = ncol(mat))
   
-  dm=dim(mat)
+  for(i in 1:nrow(mat))
+    for(j in 1:ncol(mat))
+      mat[i,j]=get.alias.lhs(mat[i,j])
   
-  if(dm!=n1 && dm!=(n1+n2)){
-    return("Dimension mismatch")
-  }
+  vs=vars.level[,1]
+  for(i in 1:nrow(mat))
+    for(j in 1:ncol(mat))
+      levels[i,j]=get.level(mat[i,j])
   
-  tryCatch({
-    for(i in 1:nrow(mat)){
-      
-      nm=get.alias.lhs(mat[i,])
-      
-      k=nrow(vars.dictionary)+1
-      vars.dictionary               [k,] <<- NA
-      vars.dictionary$id            [k]  <<- k
-      vars.dictionary$name         [[k]] <<- nm
-      vars.dictionary$dim           [k]  <<- n1
-      vars.dictionary$dim.latent    [k]  <<- n2
-      vars.dictionary$support      [[k]] <<- family$getSupport(family)
-      vars.dictionary$is.phantom    [k]  <<- FALSE
-      vars.dictionary$family       [[k]] <<- family
-      vars.dictionary$hyper.params [[k]] <<- family$runtime.pars.data.frame
-      
-      if(dm>n1){
-        supps=family$getSupport.latent(family)
-        fams=family$getFamily.latent(family)
-        
-        for(j in n1:(n1+n2)){
-          k=nrow(vars.dictionary)+1
-          nm=get.alias.lhs(mat[i,j])
-          
-          vars.dictionary               [k,] <<- NA
-          vars.dictionary$id            [k]  <<- k
-          vars.dictionary$name         [[k]] <<- nm
-          vars.dictionary$dim           [k]  <<- 1
-          vars.dictionary$dim.latent    [k]  <<- 0
-          vars.dictionary$support      [[k]] <<- list(supps[[j-n1+1]])
-          vars.dictionary$is.phantom    [k]  <<- TRUE
-          vars.dictionary$latent        [k]  <<- TRUE
-          vars.dictionary$phantom.for   [k]  <<- k-1
-          vars.dictionary$family       [[k]] <<- list(fams[[j-n1+1]])
-          vars.dictionary$hyper.params [[k]] <<- fams[[j-n1+1]]$runtime.pars.data.frame
-        }
-      }
+
+  if(!is.null(family)){
+    n1=family$dim
+    n2=family$dim.latent
+    
+    dm=dim(mat)
+    
+    if(dm!=n1 && dm!=(n1+n2)){
+      return("Dimension mismatch")
     }
     
-  },error=function(e){
-    return(paste0("Parser internal error: ",e))
-  })
+    tryCatch({
+      for(i in 1:nrow(mat)){
+        
+        nm=get.alias.lhs(mat[i,])
+        
+        k=nrow(vars.dictionary)+1
+        vars.dictionary               [k,] <<- NA
+        vars.dictionary$id            [k]  <<- k
+        vars.dictionary$name         [[k]] <<- nm
+        vars.dictionary$dim           [k]  <<- n1
+        vars.dictionary$dim.latent    [k]  <<- n2
+        vars.dictionary$support      [[k]] <<- family$getSupport(family)
+        vars.dictionary$is.phantom    [k]  <<- FALSE
+        vars.dictionary$family       [[k]] <<- family
+        vars.dictionary$hyper.params [[k]] <<- family$runtime.pars.data.frame
+        
+        if(dm>n1){
+          supps=family$getSupport.latent(family)
+          fams=family$getFamily.latent(family)
+          
+          for(j in n1:(n1+n2)){
+            k=nrow(vars.dictionary)+1
+            nm=get.alias.lhs(mat[i,j])
+            
+            vars.dictionary               [k,] <<- NA
+            vars.dictionary$id            [k]  <<- k
+            vars.dictionary$name         [[k]] <<- nm
+            vars.dictionary$dim           [k]  <<- 1
+            vars.dictionary$dim.latent    [k]  <<- 0
+            vars.dictionary$support      [[k]] <<- list(supps[[j-n1+1]])
+            vars.dictionary$is.phantom    [k]  <<- TRUE
+            vars.dictionary$latent        [k]  <<- TRUE
+            vars.dictionary$phantom.for   [k]  <<- k-1
+            vars.dictionary$family       [[k]] <<- list(fams[[j-n1+1]])
+            vars.dictionary$hyper.params [[k]] <<- fams[[j-n1+1]]$runtime.pars.data.frame
+          }
+        }
+      }
+      
+    },error=function(e){
+      return(paste0("Parser internal error: ",e))
+    })
+  }
+  
+  if(!is.null(copula)){
+    #Add copula structure to the covs.list
+    #covs.list is a named list of covariances. The name is the levels'lhs name, and the
+    # value is two elements. The first element
+    #covs.list[[lev.name]]=list(copulas,covMat)
+    levs=get.level(mat)
+    levsc=c(levs)
+    if(!all.equal(levsc,rep(levsc[1],length(levsc))))
+      return("Parser internal error: Variables belong to different leves. You can assign copula functions to induce conditional dependency for variables vary at the same level.")
+    
+    lev=levc[1]
+    covs.list[[lev]]
+  }
     
   return(TRUE)
 }
+
+get.level <- function(mat){
+  if(is.matrix(mat)){
+    levs=matrix("",nrow(mat),ncol(mat))
+    
+    for(i in 1:nrow(mat))  
+      for(j in 1:ncol(mat))
+        levs[i,j]=get.level(mat[i,j])
+    return(levs)
+  }
+  
+  if(length(mat)>1){
+    levs=rep("",length(mat))
+    for(i in seq_along(var))  
+      levs[i]=get.level(mat[i])
+    return(levs)
+  }
+  
+  if(nrow(vars.level)==0)
+    return(NA)
+  var=get.alias.lhs(mat)
+  ind=which(vars.level[,1]==var)
+  if(length(ind)==0)
+    return(NA)
+  return(vars.level[ind[1],2])
+}
+
+add.vars.to.level<-function(mat,lev){
+  if(is.matrix(mat)){
+    for(i in 1:nrow(mat))  
+      for(j in 1:ncol(mat))
+        add.vars.to.level(mat[i,j],lev)
+    return()
+  }
+  
+  if(length(mat)>1){
+    for(i in seq_along(var))  
+      add.vars.to.level(mat[i],lev)
+    return()
+  }
+  
+  if(nrow(vars.level)==0)
+    return(NA)
+  
+  var=get.alias.lhs(mat)
+  lev=get.alias.lhs(lev)
+  
+  ind=which(vars.level[,1]==var)
+  
+  if(length(ind)>0){
+    if(vars.level[ind,2]==lev)
+      return()
+    
+    stop("gmlSEM error: double level specification for variable '",mat,"'")
+  }
+  
+  n=nrow(vars.level)+1
+  vars.level[n,] <<- c(var,lev)
+}
+
+vars.level <- data.frame(var       = character(),
+                         level     = character()
+                         )
 
 #Parser Output
 # for each family with a latent generating process, two records are added pointing to each other. One for the observed variable(s), and one for the latent phantom variable(s)
@@ -192,7 +286,7 @@ add.levels<-function(lev){
   if(lev %in% rn)
     return()
   
-  
+  #Rectify levels.matrix and vars.level based on new aliases
   levels.matrix<<-rbind(levels.matrix,0)
   levels.matrix<<-cbind(levels.matrix,0)
   colnames(levels.matrix)<<-rownames(levels.matrix)<<-c(rn,lev)
@@ -317,6 +411,13 @@ add.alias<-function(lhs,rhs=NULL,role=NA){
            "Thus, ",lhs," and ",rhs," cannot be defined as alias.")
     }
   }
+  
+  #rectify vars.level
+  if(nrow(vars.level)>0){
+    vars.level[,1] <<- get.alias.lhs(vars.level[,1])
+    vars.level[,2] <<- get.alias.lhs(vars.level[,2])
+  }
+  
   return()
 }
 
@@ -356,4 +457,77 @@ get.alias.rhs<-function(lbl){
   #   add.alias(lbl,lbl)
   
   lbl
+}
+
+merge.models<-function(str){
+  if(length(str)==1)
+    return(str)
+  
+  str=paste0(str,collapse = "+")
+  str=gsub("\\+*\\-+\\+*","-",str,perl = TRUE)
+  str=gsub("\\+*\\*+\\+*","*",str,perl = TRUE)
+  str=gsub("\\+{2,}","+",str,perl = TRUE)
+  str
+}
+
+expand.dots.in.syntax<-function(model.syntax){
+  pattern  = "(?J)(?>(?>(?>([^:,\\+\\n\\r\\<\\>~\\-\\(\\)|]|(?'cond'\\|))*(?>\\((?>(?!\\.\\.\\.)([^:,\\+\\n\\r\\<\\>~\\-\\(\\)|]|\\k'cond')|(?1))*\\))?){1,2})(?'sep'[,+]))?(?>(?>(?!\\.\\.\\.)([^:,\\+\\n\\r\\<\\>~\\-\\(\\)|]|\\k'cond')*(?:\\((?>[^:,\\+\\n\\r\\<\\>~\\-()|]|(?1))*\\))?){1,2})(?'sep'[,+])\\.\\.\\.\\k'sep'(?>(?>(?!\\.\\.\\.)[^:,\\+\\n\\r\\<\\>~\\-\\(\\)|]*(?>\\((?>(?!\\.\\.\\.)([^:,\\+\\n\\r\\<\\>~\\-\\(\\)|]|\\k'cond')|(?1))*\\))?){1,2})"
+  capture.ellipsis=gregexpr(pattern, model.syntax, perl=TRUE,ignore.case =TRUE)
+  match.start=capture.ellipsis[[1]]
+  match.length=attr(capture.ellipsis[[1]],"match.length")
+  for(i in rev(seq_along(match.start))){
+    txt.ellipsis=substring(model.syntax,match.start[i],
+                            match.start[i]+match.length[i]-1)
+    txt.expanded=expand.ellipsis(txt.ellipsis)
+    model.syntax=paste0(substring(model.syntax,1,match.start[i]-1),
+                         txt.expanded,
+                         substring(model.syntax,match.start[i]+match.length[i],nchar(model.syntax)))
+  }
+  model.syntax
+}
+
+
+extract.random.effects<-function(model.syntax,lhs=""){
+  
+  lhs=gsub("~","",gsub("=~","",lhs,fixed = TRUE),fixed = TRUE)
+  if(grepl("=",lhs,fixed = TRUE)){
+    #in the case that lhs is a dummy variable e.g. y=0
+    lhs=get.alias.rhs(lhs)
+  }
+  re=data.frame(var=character(),label=character(),level=character(),dummy.label=character())
+  
+  capture.within <- gregexpr("\\( *(?'term'.*) *\\| *(?'level'[\\w\\._]+) *\\)", model.syntax,perl = TRUE,ignore.case =TRUE)
+  match.start=capture.within[[1]]
+  match.length=attr(capture.within[[1]],"match.length")
+  capture.length=attr(capture.within[[1]],"capture.length")
+  capture.start=attr(capture.within[[1]],"capture.start")
+  if(nrow(capture.start)>0){
+    for(i in 1:nrow(capture.start)){
+      
+      tterm=substring(model.syntax,capture.start[i,1],capture.start[i,1]+capture.length[i,1]-1)
+      tlev =trim(substring(model.syntax,capture.start[i,2],capture.start[i,2]+capture.length[i,2]-1))
+      
+      if(!grepl("^[\\w\\._]+$",tlev,perl = TRUE)){
+        stop("\ngmlSEM error: levelname mismatch at:\n",
+             substring(model.syntax,match.start[i],match.start[i]+match.length[i]-1))
+      }
+      
+      terms.match=gregexpr("\\b(?'var'[\\w\\._()*]+)(?:@(?'lat'[\\w\\._]+))?\\b", tterm,perl = TRUE,ignore.case =TRUE)[[1]]
+      c.s=attr(terms.match,"capture.start")
+      c.l=attr(terms.match,"capture.length")    
+      if(nrow(c.s)>0)
+        for(j in 1:nrow(c.s)){
+          var=trim(substr(tterm,c.s[j,1],c.s[j,1]+c.l[j,1]-1))
+          lab=trim(substr(tterm,c.s[j,2],c.s[j,2]+c.l[j,2]-1))
+          dummylab=""
+          if(lhs!="")
+            dummylab=paste0(lhs,".",tlev,".",var)
+          n=nrow(re)+1
+          re[n,]<-c(var,lab,tlev,dummylab)
+        }
+    }
+  }
+  
+  re
+  
 }

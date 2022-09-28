@@ -17,7 +17,7 @@ model.syntax      = readChar(sample_syntax_file, file.info(sample_syntax_file)$s
 
 #############################################################
 ##################### Parser Code ###########################
-
+add.levels('1') 
 
 # check for empty syntax
 if(length(model.syntax) == 0) {
@@ -95,18 +95,46 @@ for(i in rev(seq_along(res))){
 
 
 
-## Replacing keywords and phrases with operators and commands in gmlSEM syntax
-#[as .] suffix name assign operator
-capture.within <- gregexpr("\\[\\s*?as\\s+(.*?)\\s*\\]", model.syntax,perl = TRUE,ignore.case =TRUE)
+#Searching for random effects and adding them to the vars.level data.frame
+#Before that we first replace the name assign operator i.e. [as .] with a simple syntax then we will expand three dots
+capture.within <- gregexpr("\\[ *as +(?'alias'.*?) *\\]", model.syntax,perl = TRUE,ignore.case =TRUE)
 match.start=capture.within[[1]]
 match.length=attr(capture.within[[1]],"match.length")
 capture.length=attr(capture.within[[1]],"capture.length")
 capture.start<-attr(capture.within[[1]],"capture.start")
-if(length(capture.start)>0){
-  for(i in seq(length(capture.start),1,by=-1)){
+if(nrow(capture.start)>0){
+  for(i in seq(nrow(capture.start),1,by=-1)){
     model.syntax<-paste0(substring(model.syntax,1,match.start[i]-1),"@",
                          substring(model.syntax,capture.start[i],capture.start[i]+capture.length[i]-1),
                          substring(model.syntax,match.start[i]+match.length[i]))
+  }
+}
+
+# finding regression and expanding three dots
+# This pattern supports multi-lines models
+ran.list=list()
+capture.within <- gregexpr("(?<=^|\n)[^\n][^~]*(?:~|=~)(?'model'(?:[^~:\n]*[+\\-*/]\\s*)*[^~:\n]*(?=$|\n))", model.syntax,perl = TRUE,ignore.case =TRUE)
+match.start=capture.within[[1]]
+match.length=attr(capture.within[[1]],"match.length")
+capture.length=attr(capture.within[[1]],"capture.length")
+capture.start<-attr(capture.within[[1]],"capture.start")
+if(nrow(capture.start)>0){
+  for(i in seq(nrow(capture.start),1,by=-1)){
+    
+    lhs=trim(substring(model.syntax,match.start[i],capture.start[i]-1))
+    mdl=substring(model.syntax,capture.start[i],capture.start[i]+capture.length[i]-1)
+    mdl=trim(strsplit(mdl,"\n")[[1]])
+    mdl=expand.dots.in.syntax(merge.models(mdl))
+    
+    model.syntax<-paste0(substring(model.syntax,1,match.start[i]-1),lhs,mdl,
+                         substring(model.syntax,match.start[i]+match.length[i]))
+    
+    #Add random effects if any to ran.list to later adding them to vars.level 
+    res=extract.random.effects(mdl,lhs)
+    if(nrow(res)>0){
+      ran.list[[length(ran.list)+1]]=list(mdl=mdl,lhs=lhs)
+    }
+    
   }
 }
 
@@ -210,9 +238,7 @@ if(capture.within[[1]][1]>0){
       add.alias(txtm.par,txtm)
       
       
-      
-      parsedData[["vars.level"]]=rbind(data.frame(var=txtm,var.inpar=txtm.par,level=lev),
-                                       parsedData[["vars.level"]])
+      add.vars.to.level(txtm,lev)
     }
     
   }  
@@ -220,7 +246,7 @@ if(capture.within[[1]][1]>0){
 
 
 #'within' keyword in level: command
-#'template allow multi line sdeinition of level structure
+#'template allow multi line definition of level structure
 while(TRUE){
   capture.within <- gregexpr("(?<=>>L>>:)((?:\\s*,? *[\\w\\.][\\w\\._]* *(?:\\( *[\\w\\.][\\w\\._]* *\\))?)+)(?=$|\n)", model.syntax,perl = TRUE,ignore.case =TRUE)
   if(capture.within[[1]][1]==-1)
@@ -272,14 +298,7 @@ while(TRUE){
 
 #########################################################
 ################# Processing Levels #####################
-  #Rectify lev names with respect to new aliases
-  if(!is.null(nrow(parsedData[["vars.level"]]))){
-    parsedData[["vars.level"]]$level=get.alias.lhs(parsedData[["vars.level"]]$level)
-  }
-  if(nrow(levels.matrix)>0){
-    colnames(levels.matrix)=rownames(levels.matrix)=get.alias.lhs(rownames(levels.matrix))
-  }
-  
+
   # Look for any inconsistency in level structure
   # Levels are consistent if and only if 
   #  any submatrix of levels.matrix contains a zero row
@@ -306,12 +325,34 @@ while(TRUE){
     levels[[lev]]<-getSubLevels(lev)
   }
   
+  
+  #Now that the alias list is loaded we can add random effects to vars.level
+  #We postponed this procedure for using aliases in naming conventions
+  if(length(ran.list)>0)
+    for(i in 1:length(ran.list)){
+      res=extract.random.effects(ran.list[[i]]$mdl,ran.list[[i]]$lhs)
+      if(nrow(res)>0){
+        for(j in 1:nrow(res)){
+          if(res$label[j]!=""){
+            add.alias(res$dummy.label[j],res$label[j])
+            add.vars.to.level(res$label[j],res$level[j])
+          }else{
+            add.vars.to.level(res$dummy.label[j],res$level[j])
+          }
+        }
+      }
+    }
+  
   ######## Every level has its own conditional covariance structure 
-  covs=list()
-  for(i in )
+  covs.list=list()
+  for(nm in names(levels)){
+    covs.list[[nm]]=matrix(NA,0,0)
+  }
 
 ###########################
 
+#At this step we which variables vary at which level. 
+#Now, we can specify copula (if any) to the variables vary at the same level
 
 #marking distributions with tag >>F>>:
 #template allow breaklines after the list of variables
@@ -656,5 +697,5 @@ if(LEVEL_OP){
 
 
 
-
+parsedData[["vars.level"]] = vars.level
 

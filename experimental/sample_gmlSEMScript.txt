@@ -74,7 +74,8 @@ dem65 ~ beta1*center(x1)+beta1*center(x2)+...+beta1*center(x5)
 ind60 ~ beta1*center(x1)+beta2*center(x2)+...+beta5*center(x5)
 
 #Multiple ellipses in the regression block
-y ~ x1+x3+...+x9+y1+...+y9+(x1+...+x9|class)+(a11*x1[as rx1]+...+a19*x9[as rx9]|class)
+y ~ x1+x3+...+x9+y1+...+y9+
+    (x1+...+x9|class)+(a11*x1[as rx1]+...+a19*x9[as rx9]|class)
 
 #Heteroskedasticity
 heter: y ~ x1 + x2
@@ -133,8 +134,8 @@ size: 100  student
 ### repeated measure syntax
 ##rep|repeated|repeated measures or any abbreviations is acceptable
 #rep: time within subject
-#rep: x1,...,x10 for x
-#     y1,...,y10 for y
+#rep: x1,...,x10 for x(t=1:10)
+#     y1,...,y10 for y(t)
 ##You can use naming conventions to give a name to the time index, and to use it later in the models
 #rep: x1,...,x10 for x(t)
 #     y1,...,y10 for y(s)

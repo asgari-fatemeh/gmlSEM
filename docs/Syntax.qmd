@@ -398,7 +398,7 @@ In the next example we will see how to use the `center(.)` term in *gmlSEM* synt
 
 !['Centered Student Attitude' and 'Class Climate' on 'Student Performace' in a three-level SEM](img/multi-level3.svg){#fig-3-level-2 alt="'Student Attitude' and deviation of 'Student Attitute' from the 'Class Climate' on 'Student Performace' in a three-level SEM"}
 
-As we discussed by now, *gmlSEM* avoids using unique or residual terms. So in gmlSEM graphs unique factors represents the centered version of random variables,drawing unique factors for describing the variation of the response variables. The variation of response variables is explained by the corresponding family distribution and hence we do not draw unique factors, and the conditional dependency is described by the copula function. The *gmlSEM* syntax for the model depicted at @fig-3-level-2 comes next.
+As we discussed by now, *gmlSEM* avoids using unique or residual terms. The variation of response variables is explained by the corresponding family distribution and hence we do not draw unique factors, and the conditional dependency is described by the copula function. In *gmlSEM* graphs, unique factors represents the centered version of random variables. The *gmlSEM* syntax for the model depicted at @fig-3-level-2 comes next.
 
 ::: {#exm-exam4}
 ## Using centered variables
@@ -464,7 +464,7 @@ Consider that specifying a copula function in the family block is not mandatory,
 
 As we noted before, the *gmlSEM* syntax helps you to define levels in your model and different family of distributions. In addition there is few other things to consider, speccially if you come from *lavaan*:
 
-1.  In *gmlSEM* the `|` operator is only used within parenthesis on the right hand side of a regression model to define random effects as you do in `lme3::lmer`. In *lavaan* this operator helps you to define thresholds for the categorical endogenous variables. In *gmlSEM* you will define nominal and categorical random variables in the family: block such as
+1.  In *gmlSEM* the `|` operator is only used within parenthesis on the right hand side of a regression model to define random effects as you do in `lme4::lmer`. In *lavaan* this operator helps you to define thresholds for the categorical endogenous variables. In *gmlSEM* you will define nominal and categorical random variables in the family: block such as
 
         family: y ordinal(levels=c(1,2,3,4),thresholds=c(0,NA,NA),latent.family=Gaussian())
 

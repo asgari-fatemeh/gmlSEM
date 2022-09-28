@@ -985,5 +985,6 @@ srt2gmlSEMfamily<-function(str){
 # a2=srt2gmlSEMfamily('tobit(type=1,family=normal())')
 # a3=srt2gmlSEMfamily("bin(trials=N)")
 # a4=srt2gmlSEMfamily("beta(domain=c(-1,1))")
+# a5=srt2gmlSEMfamily('disc(domain=2:5)')
 
 
