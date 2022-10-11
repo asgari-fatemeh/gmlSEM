@@ -85,11 +85,23 @@ resolve<-function(xname=NA,i.row=NA){
   }
 }
 
-switch.space<-function(x){
-  ifelse(grepl(" ",x,fixed = TRUE),
-         gsub(" ",space.sub,gsub("\\t",tab.sub,x,fixed = TRUE),fixed=TRUE),
-         gsub(space.sub," ",gsub(tab.sub,"\\t",x,fixed = TRUE),fixed=TRUE)
-  )
+switch.space<-function(x,omit.spaces=NULL,restore.spaces=NULL){
+  if(is.null(omit.spaces))
+    omit.spaces=FALSE
+  if(is.null(restore.spaces))
+    restore.spaces=FALSE
+  
+  if(!omit.spaces & !restore.spaces){
+    #Decide wether to remove spaces or restore spaces based on the string
+    ifelse(grepl(" ",x,fixed = TRUE),
+           gsub(" ",space.sub,gsub("\\t",tab.sub,x,fixed = TRUE),fixed=TRUE),
+           gsub(space.sub," ",gsub(tab.sub,"\\t",x,fixed = TRUE),fixed=TRUE)
+    )
+  }else if(omit.spaces){
+    gsub(" ",space.sub,gsub("\\t",tab.sub,x,fixed = TRUE),fixed=TRUE)
+  }else if(restore.spaces){
+    gsub(space.sub," ",gsub(tab.sub,"\\t",x,fixed = TRUE),fixed=TRUE)
+  }
 }
 
 trim <- function (x) gsub("^\\s+|\\s+$", "", x)

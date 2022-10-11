@@ -5,6 +5,14 @@ data.is.provided = FALSE
 #Main object returned by the parser
 parsedData=list()
 
+
+vars.level      <- data.frame(var = character(), level = character())
+
+covs            <- list()          #lists of lists. one cov matrix per level per group
+levels.list     <- list()          #list of levels hierarchy (levels' tree)
+levels.matrix   <- matrix(0,1,1)
+rownames(levels.matrix) <- colnames(levels.matrix) <- "1"
+
 #start.idx <- grep("[~=<>:|%]", model.simple)
 operators.blocks <- c(
   #G: gmlSEM supported operator
@@ -39,6 +47,10 @@ operators.blocks <- c(
   #"~*~" = "nouse"         Scaling factor operator is ommited from gmlSEM syntax
   #"%"   = "nouse"
 )
+
+#Accepting models on rhs of the operators
+model.operators <- names(operators.blocks)[operators.blocks%in%
+                           c("measurement","regression","formative","covariance")]
 
 operators <- names(operators.blocks)
 lhs.blocks <- c("level","family","heter","group","size")
@@ -136,6 +148,15 @@ add.vars.to.dictionay<-function(mat, # matrix of variable names. Extracted from 
   return(TRUE)
 }
 
+get.level.lhs<-function(lhs){
+  lhs=gsub("<~|~|=~","",lhs,perl = TRUE)
+  lhs=gsub("^.*:","",lhs,perl = TRUE)
+  lhs=trim(lhs)
+  lhs=expand.ellipsis(lhs)
+  mat=attr(lha,"mat")
+  get.level(mat)
+}
+
 get.level <- function(mat){
   if(is.matrix(mat)){
     levs=matrix("",nrow(mat),ncol(mat))
@@ -195,9 +216,10 @@ add.vars.to.level<-function(mat,lev){
   vars.level[n,] <<- c(var,lev)
 }
 
-vars.level <- data.frame(var       = character(),
-                         level     = character()
-                         )
+
+
+#gmlSEM parser environment to resolve parameter values
+env=new.env()
 
 #Parser Output
 # for each family with a latent generating process, two records are added pointing to each other. One for the observed variable(s), and one for the latent phantom variable(s)
@@ -233,14 +255,6 @@ all.alias       <- data.frame(
   all.forms=I(list())
 )
 
-covs            <- list()  #lists of lists. one cov matrix per level per group
-levels          <- list()
-levels.matrix   <- matrix(0,1,1)
-rownames(levels.matrix) <- colnames(levels.matrix) <- "1"
-
-
-#gmlSEM parser environment to resolve parameter values
-env=new.env()
 
 group.specs = list(
   list(
@@ -277,6 +291,14 @@ add.levels<-function(lev){
     return()
   
   lev=trim(lev)
+  
+  if(grepl("(",lev,fixed = TRUE)){
+    levv=captured.groups(lev," *(?'var'.*) *\\( *(?'varn'.*) *\\)")
+    lev=trim(levv$var)
+    lev.par=trim(levv$varn)
+    add.alias(lev.par,lev,"OV")
+  }
+  
   lev=get.alias.lhs(lev)
   
   # if(lev=="1")
@@ -295,7 +317,7 @@ add.levels<-function(lev){
 
 set.levels.matrix<-function(lhs,rhs){
   
-  if(length(lhs)>1){
+  if(length(lhs)>1 || length(rhs)>1){
     for(i in 1:length(lhs))
       for(j in 1:length(rhs))
         set.levels.matrix(lhs[i],rhs[j])
@@ -486,6 +508,50 @@ expand.dots.in.syntax<-function(model.syntax){
   model.syntax
 }
 
+extract.modelterms.lhs<-function(lhs){
+  terms.match=gregexpr("^(?: *(?'blockname'[\\w\\._]+) *:)? *(?'tterms'[^~<>]+) *(?'op'<~|=~|~) *", lhs,perl = TRUE)[[1]]
+  if(terms.match[1]<0)
+    stop("\ngmlSEM error: left hand side of model mismatch:\n",lhs)
+  
+  c.s=attr(terms.match,"capture.start")
+  c.l=attr(terms.match,"capture.length")
+  
+  block.name=""
+  if(c.l[1]>0)
+    block.name = trim(substring(lhs,c.s[1],c.s[1]+c.l[1]-1))
+  yterms = trim(substring(lhs,c.s[2],c.s[2]+c.l[2]-1))
+  op     = substring(lhs,c.s[3],c.s[3]+c.l[3]-1)
+  
+  mat=expand.ellipsis(yterms)
+  mat=attr(mat,"mat")
+  
+  list(yterms=yterms,block.name=block.name,op=op,mat=mat)
+}
+
+
+extract.modelterms.rhs0<-function(tterm){
+  re=data.frame(mod    = character(),     #term := mod*varfun(var)@label
+                var    = character(),
+                varfun = character(), 
+                label  = character())
+  terms.match=gregexpr("(?J)(?:(?'mod'\\b[\\w\\._]+\\b(?: *\\([\\w\\._=\"']+\\))?) *\\* *)?(?:(?:(?'varfun'[\\w\\._]+) *\\( *(?'var'[\\w\\._]+) *\\))|(?'var'[\\w\\._]+))(?:@(?'lat'[\\w\\._]+))?", tterm,perl = TRUE,ignore.case =TRUE)[[1]]
+  c.s=attr(terms.match,"capture.start")
+  c.l=attr(terms.match,"capture.length")    
+  if(terms.match[1]>=0)
+    for(j in 1:nrow(c.s)){
+      mod=trim(substr(tterm,c.s[j,"mod"],c.s[j,"mod"]+c.l[j,"mod"]-1))
+      varfun=trim(substr(tterm,c.s[j,"varfun"],c.s[j,"varfun"]+c.l[j,"varfun"]-1))
+      s.var=ifelse(c.s[j,3]>0,c.s[j,3],c.s[j,4])
+      l.var=ifelse(c.s[j,3]>0,c.l[j,3],c.l[j,4])
+      var=trim(substr(tterm,s.var,s.var+l.var-1))
+      lab=trim(substr(tterm,c.s[j,"lat"],c.s[j,"lat"]+c.l[j,"lat"]-1))
+      
+      n=nrow(re)+1
+      re[n,]<-c(mod,var,varfun,lab,lag)
+    }
+  
+  re
+}
 
 extract.random.effects<-function(model.syntax,lhs=""){
   
@@ -494,14 +560,19 @@ extract.random.effects<-function(model.syntax,lhs=""){
     #in the case that lhs is a dummy variable e.g. y=0
     lhs=get.alias.rhs(lhs)
   }
-  re=data.frame(var=character(),label=character(),level=character(),dummy.label=character())
+  re=data.frame(mod    = character(),
+                var    = character(),    #mod*varfun(var)@label|leve
+                varfun = character(), 
+                label  = character(),
+                level  = character(),
+                dummy.label=character())
   
   capture.within <- gregexpr("\\( *(?'term'.*) *\\| *(?'level'[\\w\\._]+) *\\)", model.syntax,perl = TRUE,ignore.case =TRUE)
   match.start=capture.within[[1]]
   match.length=attr(capture.within[[1]],"match.length")
   capture.length=attr(capture.within[[1]],"capture.length")
   capture.start=attr(capture.within[[1]],"capture.start")
-  if(nrow(capture.start)>0){
+  if(match.start[1]>=0){
     for(i in 1:nrow(capture.start)){
       
       tterm=substring(model.syntax,capture.start[i,1],capture.start[i,1]+capture.length[i,1]-1)
@@ -512,22 +583,115 @@ extract.random.effects<-function(model.syntax,lhs=""){
              substring(model.syntax,match.start[i],match.start[i]+match.length[i]-1))
       }
       
-      terms.match=gregexpr("\\b(?'var'[\\w\\._()*]+)(?:@(?'lat'[\\w\\._]+))?\\b", tterm,perl = TRUE,ignore.case =TRUE)[[1]]
-      c.s=attr(terms.match,"capture.start")
-      c.l=attr(terms.match,"capture.length")    
-      if(nrow(c.s)>0)
-        for(j in 1:nrow(c.s)){
-          var=trim(substr(tterm,c.s[j,1],c.s[j,1]+c.l[j,1]-1))
-          lab=trim(substr(tterm,c.s[j,2],c.s[j,2]+c.l[j,2]-1))
+      terms=extract.modelterms.rhs(tterm)
+      if(nrow(terms)>0)
+        for(j in 1:nrow(terms)){
+          var=terms$var[j]
           dummylab=""
           if(lhs!="")
             dummylab=paste0(lhs,".",tlev,".",var)
           n=nrow(re)+1
-          re[n,]<-c(var,lab,tlev,dummylab)
+          re[n,]<-c(terms[j,],tlev,dummylab)
         }
     }
   }
   
   re
+}
+
+
+levels.reachUp<-function(levs,lev){
+  #go deep to the level lev and return all of its descendant branches
+  if(length(levs)==0)
+    return(list())
+  a=list()
+  for(i in 1:length(levs)){
+    if(names(levs)[i]==lev){
+      return(levs[[i]])
+    }else{
+      a=reachDown(levs[[i]],lev)
+      if(length(a)>0)
+        return(a)
+    }
+  }
+  a
+}
+
+levels.goDown<-function(levs,lev){
+  #Go down in levs until it reach to lev
+  #If ound the lev, sen a signal back to the top
+  #Otherwise it will echo a zero to the top
+  if(length(levs)==0)
+    return(0)
+  if(lev %in% names(levs))
+    return(1)
+  
+  for(l in levs){
+    res=goDown(l,lev)
+    if(res!=0)
+      return(res)
+  }
+  return(0)
+}
+
+levels.are.consistent<-function(down,up){
+  #Return
+  #TRUE: if 'down' is a descendent to 'up' in the levels' tree
+  #FALSE: otherwise
+  
+  down=get.alias.lhs(down)
+  if(down=="1")
+    return(TRUE)
+  
+  up=get.alias.lhs(up)
+  if(up=="1")
+    return(FALSE)
+  
+  if(down==up)
+    return(TRUE)
+  
+  if(! down %in% rownames(levels.matrix))
+    stop("\ngmlSEM error: undefined level",down)
+  
+  if(! up %in% rownames(levels.matrix))
+    stop("\ngmlSEM error: undefined level: ",up)
+  
+  l.up=levels.reachUp(levels,up)
+  res=levels.goDown(l.up,down)
+  
+  if(res==1)
+    return(TRUE)
+  
+  return(FALSE)
+}
+
+
+# Look for any inconsistency in level structure
+# Levels are consistent if and only if 
+#  any submatrix of levels.matrix contains a zero row
+validate.level.hierarchy<-function(){
+  n.levels<-nrow(levels.matrix)
+  for(i in 1:n.levels){
+    cmbn<-combn(1:n.levels,i)
+    for(j in 1:ncol(cmbn)){
+      .subm <- levels.matrix[cmbn[,j],cmbn[,j]]
+      if(i==1){
+        if(.subm==1)
+          stop(paste0("gmlSEM error in levels: ",rownames(.subm)))
+      }else{
+        any_zero<-any(sapply(1:nrow(.subm), function(k){sum(.subm[k,])==0}))
+        if(!any_zero)
+          stop("gmlSEM error: Levels are inconsistent. There is a loop in the level structure")
+      }
+    }
+  }
+  
+  # Constructing Level structure
+  levels.list<<-list()
+  .zeros<-sapply(1:nrow(levels.matrix), function(k){sum(levels.matrix[k,])==0})
+  .levels<- rownames(levels.matrix)[which(.zeros)]
+  for(lev in .levels){
+    levels.list[[lev]]<<-getSubLevels(lev)
+  }
   
 }

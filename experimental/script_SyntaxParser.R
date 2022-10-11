@@ -4,7 +4,7 @@ source("experimental/Parser_InternalMisc.R")
 source("experimental/Parser_InternalEllipsis.R")
 source("experimental/Parser_InternalFamilyClass.R")
 source("experimental/Parser_InternalFamilyCollection.R")
-source("experimental/Parser_InternalObjects.R")
+debugSource("experimental/Parser_InternalObjects.R")
 
 sample_syntax_file       = 'experimental/sample_gmlSEMScript.txt'
 fileName = 'experimental/sample_gmlSEMScript.txt'
@@ -113,7 +113,7 @@ if(nrow(capture.start)>0){
 # finding regression and expanding three dots
 # This pattern supports multi-lines models
 ran.list=list()
-capture.within <- gregexpr("(?<=^|\n)[^\n][^~]*(?:~|=~)(?'model'(?:[^~:\n]*[+\\-*/]\\s*)*[^~:\n]*(?=$|\n))", model.syntax,perl = TRUE,ignore.case =TRUE)
+capture.within <- gregexpr("(?<=^|\n)[^\n][^~]*(?:<~|~|=~)(?'model'(?:[^~:\n<>]*[+\\-*/]\\s*)*[^~:\n<>]*(?=$|\n))", model.syntax,perl = TRUE,ignore.case =TRUE)
 match.start=capture.within[[1]]
 match.length=attr(capture.within[[1]],"match.length")
 capture.length=attr(capture.within[[1]],"capture.length")
@@ -130,10 +130,13 @@ if(nrow(capture.start)>0){
                          substring(model.syntax,match.start[i]+match.length[i]))
     
     #Add random effects if any to ran.list to later adding them to vars.level 
-    res=extract.random.effects(mdl,lhs)
-    if(nrow(res)>0){
-      ran.list[[length(ran.list)+1]]=list(mdl=mdl,lhs=lhs)
-    }
+    res=extract.modelterms.rhs(mdl,lhs)
+    ran.list[[length(ran.list)+1]]=list(mdl=mdl,lhs=lhs)
+    
+    # res=extract.random.effects(mdl,lhs)
+    # if(nrow(res)>0){
+    #   ran.list[[length(ran.list)+1]]=list(mdl=mdl,lhs=lhs)
+    # }
     
   }
 }
@@ -236,8 +239,6 @@ if(capture.within[[1]][1]>0){
       add.levels(lev)
       
       add.alias(txtm.par,txtm)
-      
-      
       add.vars.to.level(txtm,lev)
     }
     
@@ -245,7 +246,7 @@ if(capture.within[[1]][1]>0){
 }
 
 
-#'within' keyword in level: command
+#'within' keyword in level: block
 #'template allow multi line definition of level structure
 while(TRUE){
   capture.within <- gregexpr("(?<=>>L>>:)((?:\\s*,? *[\\w\\.][\\w\\._]* *(?:\\( *[\\w\\.][\\w\\._]* *\\))?)+)(?=$|\n)", model.syntax,perl = TRUE,ignore.case =TRUE)
@@ -302,37 +303,20 @@ while(TRUE){
   # Look for any inconsistency in level structure
   # Levels are consistent if and only if 
   #  any submatrix of levels.matrix contains a zero row
-  n.levels<-nrow(levels.matrix)
-  for(i in 1:n.levels){
-    cmbn<-combn(1:n.levels,i)
-    for(j in 1:ncol(cmbn)){
-      .subm <- levels.matrix[cmbn[,j],cmbn[,j]]
-      if(i==1){
-        if(.subm==1)
-          stop(paste0("gmlSEM error in levels: ",rownames(.subm)))
-      }else{
-        any_zero<-any(sapply(1:nrow(.subm), function(k){sum(.subm[k,])==0}))
-        if(!any_zero)
-          stop("gmlSEM error: Levels are inconsistent. There is a loop in the level structure")
-      }
-    }
-  }
-  
-  # Constructing Level structure
-  .zeros<-sapply(1:nrow(levels.matrix), function(k){sum(levels.matrix[k,])==0})
-  .levels<- rownames(levels.matrix)[which(.zeros)]
-  for(lev in .levels){
-    levels[[lev]]<-getSubLevels(lev)
-  }
-  
-  
-  #Now that the alias list is loaded we can add random effects to vars.level
+  validate.level.hierarchy()
+
+  #Now that the alias list is completely loaded we can add random effects to vars.level
   #We postponed this procedure for using aliases in naming conventions
   if(length(ran.list)>0)
     for(i in 1:length(ran.list)){
       res=extract.random.effects(ran.list[[i]]$mdl,ran.list[[i]]$lhs)
       if(nrow(res)>0){
         for(j in 1:nrow(res)){
+          lev.lhs=get.level.lhs(lhs)
+          if(!is.na(lev.lhs) && any(sapply(unique(lev.lhs),function(lev)!levels.are.consistent(lev,res$level[j]))))
+            stop("\ngmlSEM error: levels are inconsistent at the regression model '",lhs,"'\n'",
+                 lhs,"' varies at the level '",paste0(unique(lev.lhs),collapse=","),"' while the random effect '",
+                 res$var,"' varies at the level '",res$level[j],"'.\n")
           if(res$label[j]!=""){
             add.alias(res$dummy.label[j],res$label[j])
             add.vars.to.level(res$label[j],res$level[j])
@@ -585,9 +569,6 @@ for(i in 1:length(model)) {
         rownames(lbls)<-NULL
         colnames(lbls)<-c("label","level")
         attr(group,"labels")<-lbls
-        
-        
-        
       }
       
     }else{

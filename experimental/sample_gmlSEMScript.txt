@@ -44,8 +44,7 @@ family: y1,...,y10
 
 
 #Hierarchical cluster/MultiLevel SEM
-   level: prov, ethnic 
-       team, class within school within city
+level: team(teamID),class(classID) within school(schoolID) within city,ethnic within prov
 
 level: class within school within city
 
