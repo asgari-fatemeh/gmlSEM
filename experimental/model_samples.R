@@ -31,5 +31,5 @@ scale(x)@a
 1+x(-1)@y2+asd*y1(1)@asdasd+a(k='1')*1@asdf+scale(x(0))+
 a*asdaf@A1a1"
 
-model<-'(asdasd,out="asd asd ")*a*(out="w46",y=exp(654))*asd(1)@asd+a+asd+
-aasd+asd+(asd|asd)+asd@asd+asd+-1+((1+x)+asd@asd|as)-1+asd*1@asd'
+model<-'y~start(runif(N))*(old=b1,young=b2)*scale(x(-1),by=class)+label(old=ab1,young="ab2")*a+asd+
+aasd+asd+(asd|asd)+asd+-1+((1+x)+asd@asd|as(-1))-1'

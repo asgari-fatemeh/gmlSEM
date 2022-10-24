@@ -109,9 +109,9 @@ total := c + (a*b)
 
 ##Multiple Group, adding argument group = "school", group.equal = c("loadings", "intercepts"), 
 ## except group.partial = c("visual=~x2", "x7~1"))
-visual =~ x1 + 0.5*x2 + c(0.6, 0.8)*x3 + c(0.1,NA)*x4
+visual  =~ x1 + 0.5*x2 + c(0.6, 0.8)*x3 + c(0.1,NA)*x4
 textual =~ x4 + start(c(1.2, 0.6))*x5 + c(a1, a2)*x6
-speed =~ x7 + x8 + x9 
+speed   =~ x7 + x8 + x9 
 
 
 #size: is a block used for simulation purpose only
@@ -130,21 +130,41 @@ size: 100  student
 # rep and size blocks are multiline blocks
 ### Do we need to make other blocks multiline as well?
 
-### repeated measure syntax
+
+####################################################################
+####################################################################
+#################### repeated measure syntax #######################
+####################################################################
+####################################################################
 ##rep|repeated|repeated measures or any abbreviations is acceptable
-#rep: time within subject
-#rep: x1,...,x10 for x(t=1:10)
-#     y1,...,y10 for y(t)
+####################################################################
+
+#### Two approach to define repeated measures blocks
+#1) using rep: block. Appropriate when data is stacked under. The dataset with repeated measure can be easily merged with other datasets
+#   if the time index is continous this s the only way for defining the repeated measure blocks
+##syntax# rep: time(t) within subject (in dataset)
+##syntax# rep: t,s within subject (in dataset)
+
+#### example
+###  model='rep: time(t) within studID in students
+###  model='spatial: x,y in schools
+###         score ~ s(t) + tacherExp + (1|school)
+###         '
+###  res = gmlSEM(model,students=StudentScoreData, studentSchool=StudentsMetaData, schools=schoolData)
+##### gmlSEM automatically will join student and school data using StudentsMetaData.
+
+
+#2)# rep: x1,...,x10 for x[t=1:10]
+#     y1,...,y10 for y[t]
 ##You can use naming conventions to give a name to the time index, and to use it later in the models
-#rep: x1,...,x10 for x(t)
-#     y1,...,y10 for y(s)
+#rep: x1,...,x10 for x[t]
+#     y1,...,y10 for y[s]
 ##or give a same name, if time indices coincides
-#rep: x1,...,x10 for x(t)
-#     y1,...,y10 for y(t)
+#rep: x1,...,x10 for x[t]
+#     y1,...,y10 for y[t]
      
-## you can use the lags on the rhs of a measurement or regression model 
-## with x(-1) or x[-1] or lag(x,1)
-## x(0) stands for baseline
+## you can use the lags on the rhs of a measurement or regression model x[-1] or lag(x,1)
+## x[0] stands for baseline
 ## the order of lags are expected to be euqal and less than zero. 
 ## Let us know if you think we need to leave out this constraint.
 
@@ -159,7 +179,7 @@ size: 100  student
 
 ## the unique values in the time will be sorted and will be matched with the 
 ## increaseing sequence starting from 1. Thus for a variable named 'x',
-## x(-1) refers to the value of X in the previous time, and X(0) is again the baseline measurements.
+## x[-1] refers to the value of X in the previous time, and X[0] is again the baseline measurements.
 
 ### using repeated mesured variables as responses either on the lhs of a regression model or on the rhs of a factor model have consequences
 
@@ -184,14 +204,14 @@ size: 100  student
 
 ### The number of equations depends on the order of lags used in the models,
 ## For example, 
-# y ~ x + x(-1) +x(-2) + z
+# y ~ x + x[-1] +x[-2] + z
 ## is equivalent to the the system of the follwoing 8 regression models
 # y3 ~ a*x3 + b*x2 +c*x1 + d*z3
 # y4 ~ a*x4 + b*x3 +c*x2 + d*z4
 # ...
 # y10 ~ a*x10 + b*x9 +c*x8 + d*z10
 ## and 
-# y ~ x + x(-1) +x(-2) + x(0) + z  !x(0) is the baseline
+# y ~ x + x[-1] +x[-2] + x[0] + z  #x[0] is the baseline
 ## is equivalent to the the system of the follwoing 7 regression models
 # y4 ~ a*x4 + b*x3 +c*x2 + d*x1 + e*z4
 # y5 ~ a*x5 + b*x4 +c*x3 + d*x1 + e*z4
@@ -199,9 +219,9 @@ size: 100  student
 # y10 ~ a*x10 + b*x9 +c*x8 + d*x1 + e*z10
 
 ### The same holds for factor models. You can use positive lags in the models for better read. However the gmlSEM will shift the lags so that
-## y(1) ~ x + x(0) + z
+## y[1] ~ x + x[0] + z
 ###is equivalent to 
-## y ~ x(-1) + x(0) + z(-1)
+## y ~ x[-1] + x[0] + z[-1]
 
 
 ### We can use this approach to write growth curve models:
@@ -209,24 +229,86 @@ size: 100  student
 # slope =~ 0*x1 + 1*x2 + 2*x3
 # inte  =~ 1*x1 + 1*x2 + 1*x3
 ## is equivalent to
-# rep: x1,x2,x3 for x(t)
+# rep: x1,x2,x3 for x[t]
 # x ~ int + slope*(t-1)
 #family: int slope normal()  !Not necessary, since  a normal distribution is assumed by default for variables for which the family is not defined. It will be noticed in an accumulated notice statement.
  
 ## or 
-#rep: x1,x2,x3,x4 for x(t)
-#x ~ int + slope1*t + slope*(t^2)
+#rep: x1,x2,x3,x4 for x[t]
+#x ~ int + slope1*t + slope2*(t^2)
 
 ## or 
-#rep: x1,...,x8 for x(t)
+#rep: x1,...,x8 for x[t]
 #x ~ s(t)  #smooth term as in functional regression
 
 #Ar(q)
-# y ~ y(-1) + y(-2) + x
+# y ~ y[-1] + y[-2] + x
 # y ~ ar(2) + x
 
+########## 2 implement #############
+####################################
+### time dependent effects
+#      x ~ int + slope1*t + slope2*(t^2) + beta[t]*z + beta[group[t]]*x + (stdx[t]*x[as xlat]|group[t])  
+# or # x ~ int + slope1*t + slope2*(t^2) + beta[] *z + beta[group[t]]*x + (stdx[] *x[as xlat]|group)  #no need to write the time index if it is clear from the contex
+
+#####in the previous model xlat is a vector of latent variables with the same length as x. The same family description must be followed for xlat otherwise gmlSEM will consider default description for it (using the same description as response)
+##e.g. family: xlat normal() copula(); xlat ~~ VC()
+## Advise: better to describe the covariance matrix of xlat within a cov statement rather than using the stdx() to avoid multiple defintions of the cov parameters e.g. xlat ~~ UN()
+## beta and stdx both are vector of fixed effects. The user can either name them in an alias statement or access them via indexing beta(1) ...
+## The index itself can be a function of time index proviso that the result be an integer within the domain of time index
+
+############################################################
+##################### Challenge ############################
+## What would happen in measurement model?
+## Let x be rep. measured, then what the following statement measn?
+# y =~ x + z + w
+## Let x and z be rep. measured with different time indices, then what the following statement means?
+# y =~ x + z + w
+############################################################
+############################################################
+
+
+###### Challenge: how to name the fixed effects for an AR or rep. effect in an multiple-Group analysis? samples: 
+### y is a rep. measured var., e.g. rep:y1,...,y10 for y(t); rep: x1,...,x10 as x(t)
+### y ~ ar(2)
+### y ~ x  
+
+##### solutions
+### y ~ beta[t]*x  #to name different coefficients for each time
+### y ~ c(beta1[t],beta2[t])*x  #to name different coefficients for each time in multiple group analysis
+### y ~ beta*x  #equal coefficients for all time points
+
+######## Notice: the time index of beta must match both the one for y or x or both
+#####example: rep:y1,...,y10 for y[t]; rep: x1,...,x4 as x[s]
+### i.e.   ## y ~ beta[t,s]*x  #to name different coefficients for each time if x and y have different time indices
+### either ## y ~ beta[,]*x    #by default it will translate to beta(t,s); 't' for y and 's' for x time index
+### either ## y ~ beta[s]*x  #beta is fixed for y time index and only varies for 's'
+
+### y ~ beta[]*ar(2) #to name different coefficients for each period i.e. beta[1]*y(-1)+beta[2]*y(-2)
+### y ~ c(beta1[],beta2[])*ar(2)  #to name different coefficients for each period in multiple group analysis
+####or
+### y ~ beta[]*ar(2) #to name different coefficients for each period i.e. beta[1]*y(-1)+beta[2]*y(-2)
+### y ~ c(beta1[],beta2[])*ar(2)  #to name different coefficients for each period in multiple group analysis
 
 # The covariance structure 
 # Conidiotnal covariance structure can be defined by a set of predifined cov. str. models, such as 
 # y ~~ MAH(2)
+
+## different covariance structures can be found in the document 'samples\AppendixE'
+## VC()       #Variance Component (diagonal covariance matrix)
+## UN()       #Unstructured (Symmetric Positive definite covariance matrix)
+## CS()       #Compound Symmetric (Equal variance and covariances)
+## CSH()      #Heterogeneous Compound Symmetry. (Unequal variances and equal correlations)
+## AR(p)      #AutoRegressive of order p
+## ARH(p)     #Heterogeneous AutoRegressive of order p with different variances ar each time
+############### prefer to use MA and MAH instead of AR and ARH
+## TOEP()     #Toeplitz
+## TOEP()     #Heterogeneous Toeplitz
+## SP|SPPOW() #SpatialPower
+
+
+
+# penelized regression or measurement model
+#y ~|=~ x1 + ... +x100 pen|penalized|regularized|shrink|shrinkage(penalty="net",alpha=0.5,method="gcv")  #penalty=c(net, lasso, ridge), ...  #method=c(cv,gcv)
+
 
